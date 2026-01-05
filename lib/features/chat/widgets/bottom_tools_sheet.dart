@@ -125,6 +125,19 @@ class BottomToolsSheet extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        roundedAction(
+                          icon: Lucide.ListOrdered,
+                          label: 'Tasks',
+                          onTap: () {
+                            Navigator.of(context).maybePop();
+                            Navigator.of(context).pushNamed('/tasks');
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     _LearningAndClearSection(
                       clearLabel: clearLabel,
                       onClear: onClear,

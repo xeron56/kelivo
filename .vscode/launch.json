@@ -1,0 +1,78 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "kelivo",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "kelivo (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "kelivo (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "mcp_client",
+            "cwd": "dependencies/mcp_client",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "tray_manager",
+            "cwd": "dependencies/tray_manager",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "permission_handler_windows",
+            "cwd": "dependencies/flutter-permission-handler/permission_handler_windows",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "permission_handler_windows (profile mode)",
+            "cwd": "dependencies/flutter-permission-handler/permission_handler_windows",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "permission_handler_windows (release mode)",
+            "cwd": "dependencies/flutter-permission-handler/permission_handler_windows",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "tray_manager",
+            "cwd": "dependencies/tray_manager/packages/tray_manager",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "tray_manager (profile mode)",
+            "cwd": "dependencies/tray_manager/packages/tray_manager",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "tray_manager (release mode)",
+            "cwd": "dependencies/tray_manager/packages/tray_manager",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
