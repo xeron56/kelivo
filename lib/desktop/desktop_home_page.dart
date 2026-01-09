@@ -11,7 +11,9 @@ import '../features/settings/pages/storage_space_page.dart';
 import 'package:window_manager/window_manager.dart';
 import 'dart:async';
 import 'hotkeys/hotkey_event_bus.dart';
+
 import 'hotkeys/chat_action_bus.dart';
+import 'package:finance_tracker/finance_tracker.dart';
 
 /// Desktop home screen: left compact rail + main content.
 /// Phase 1 focuses on structure and platform-appropriate interactions/hover.
@@ -32,11 +34,14 @@ class DesktopHomePage extends StatefulWidget {
 class _DesktopHomePageState extends State<DesktopHomePage> {
   int _tabIndex = 0; // 0=Chat, 1=Translate, 2=Storage, 3=Settings
   bool _storageVisited = false;
+
   StreamSubscription<HotkeyAction>? _hotkeySub;
+  late Future<Widget> _financeAppFuture;
 
   @override
   void initState() {
     super.initState();
+    _financeAppFuture = createFinanceTrackerApp();
     if (widget.initialTabIndex != null) {
       _tabIndex = widget.initialTabIndex!.clamp(0, 3);
     }
@@ -54,7 +59,9 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
           if (mounted) setState(() => _tabIndex = 3);
           break;
         case HotkeyAction.closeWindow:
-          try { await windowManager.close(); } catch (_) {}
+          try {
+            await windowManager.close();
+          } catch (_) {}
           break;
         case HotkeyAction.toggleAppVisibility:
           try {
@@ -88,7 +95,8 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
           if (_tabIndex == 0) ChatActionBus.instance.fire(ChatAction.newTopic);
           break;
         case HotkeyAction.switchModel:
-          if (_tabIndex == 0) ChatActionBus.instance.fire(ChatAction.switchModel);
+          if (_tabIndex == 0)
+            ChatActionBus.instance.fire(ChatAction.switchModel);
           break;
         case HotkeyAction.toggleLeftPanelAssistants:
           if (_tabIndex == 0)
@@ -137,6 +145,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
               onTapSettings: () {
                 setState(() => _tabIndex = 3);
               },
+              onTapFinance: () => setState(() => _tabIndex = 4),
             ),
             Expanded(
               // Keep all pages alive so ongoing chat streams are not canceled
@@ -148,8 +157,26 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                   const DesktopChatPage(),
                   // Translate page remains mounted
                   const DesktopTranslatePage(key: ValueKey('translate_page')),
-                  _storageVisited ? const StorageSpacePage(key: ValueKey('storage_space_page'), embedded: true) : const SizedBox.shrink(),
-                  DesktopSettingsPage(key: const ValueKey('settings_page'), initialProviderKey: widget.initialProviderKey),
+                  _storageVisited
+                      ? const StorageSpacePage(
+                          key: ValueKey('storage_space_page'),
+                          embedded: true,
+                        )
+                      : const SizedBox.shrink(),
+                  DesktopSettingsPage(
+                    key: const ValueKey('settings_page'),
+                    initialProviderKey: widget.initialProviderKey,
+                  ),
+                  FutureBuilder<Widget>(
+                    future: _financeAppFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.hasData) {
+                        return snapshot.data!;
+                      }
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                  ),
                 ],
               ),
             ),

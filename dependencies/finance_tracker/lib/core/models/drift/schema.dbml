@@ -1,0 +1,180 @@
+// Generated DBML from Drift tables
+
+
+Table Users { 
+  id int [primary key]
+  name varchar 
+  deviceID text 
+  photoPath varchar 
+}
+
+Table Profiles { 
+  id int [primary key]
+  name varchar 
+  alias text 
+  address text 
+  zip text 
+  email text 
+  phone text 
+  tin text 
+  isSelected boolean 
+  currency text 
+  globalID varchar 
+  isLocal boolean 
+  addedDate text 
+  updateDate text 
+}
+
+Table AccTypes { 
+  id int [primary key]
+  name varchar 
+  primary text 
+  addedDate text 
+  updateDate text 
+  isEditable boolean 
+}
+
+Table Accounts { 
+  id int [primary key]
+  name varchar 
+  openBal text 
+  openDate text 
+  accType int [ref: > AccTypes.id]
+  addedDate text 
+  updateDate text 
+  isEditable boolean 
+  profile int [ref: > Profiles.id]
+}
+
+Table Transactions { 
+  id int [primary key]
+  vchDate datetime 
+  narr text 
+  refNo text 
+  vchType text 
+  dr int [ref: > Accounts.id]
+  cr int [ref: > Accounts.id]
+  amount text 
+  profile int [ref: > Profiles.id]
+  project int 
+  addedDate text 
+  updateDate text 
+}
+
+Table Banks { 
+  id int [primary key]
+  account int [ref: > Accounts.id]
+  holderName text 
+  institution text 
+  branch text 
+  branchCode text 
+  accountNo text 
+}
+
+Table Wallets { 
+  id int [primary key]
+  account text 
+}
+
+Table Loans { 
+  id int [primary key]
+  account text 
+  institution text 
+  interestRate float 
+  startDate text 
+  endDate text 
+  agreementNo text 
+  accountNo text 
+}
+
+Table CCards { 
+  id int [primary key]
+  account text 
+  institution text 
+  statementDate text 
+  cardNo text 
+  cardNetwork text 
+}
+
+Table Balances { 
+  id int [primary key]
+  account text 
+  amount int 
+}
+
+Table Budgets { 
+  id int [primary key]
+  name text 
+  interval text 
+  details varchar 
+  startDay int 
+  startDate datetime 
+  profile int [ref: > Profiles.id]
+  addedDate text 
+  updateDate text 
+}
+
+Table BudgetFunds { 
+  id int [primary key]
+  account text 
+  budget text 
+}
+
+Table BudgetAccounts { 
+  id int [primary key]
+  account text 
+  budget text 
+  amount int 
+}
+
+Table Projects { 
+  id int [primary key]
+  name varchar 
+  description varchar 
+  startDate datetime 
+  profile int [ref: > Profiles.id]
+  endDate datetime 
+  status text 
+  budget int [ref: > Budgets.id]
+  addedDate text 
+  updateDate text 
+}
+
+Table Receivables { 
+  id int [primary key]
+  accountId text 
+  totalAmount int 
+  paidDate datetime 
+}
+
+Table People { 
+  id int [primary key]
+  accountId text 
+  address varchar 
+  zip varchar 
+  email varchar 
+  phone varchar 
+  tin varchar 
+}
+
+Table PaymentReminders { 
+  id int [primary key]
+  account int 
+  fund int 
+  profile int [ref: > Profiles.id]
+  details varchar 
+  interval text 
+  day int 
+  amount int 
+  paymentDate datetime 
+  addedDate text 
+  updateDate text 
+  status text 
+}
+
+Table FilePaths { 
+  id int [primary key]
+  tableType text 
+  parentTable int 
+  path varchar 
+}

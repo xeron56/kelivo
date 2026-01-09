@@ -1,0 +1,72 @@
+name: finance_tracker
+description: A FOSS, Cross-Platform Money Management App.
+version: 1.4.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.10.3
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  provider: ^6.1.2
+  drift: ^2.23.1
+  drift_flutter: ^0.1.0
+  ffi: ^2.1.3
+  sqlite3_flutter_libs: ^0.5.28
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  intl: ^0.20.2
+  logger: ^2.5.0
+  image_picker: ^1.1.2
+  collection: ^1.19.0
+  shared_preferences: ^2.3.5
+  adaptive_theme: ^3.7.0
+  fl_chart: ^0.70.2
+  pdf: ^3.11.3
+  open_filex: ^4.6.0
+  excel: ^4.0.6
+  flutter_local_notifications: ^19.1.0
+  timezone: ^0.10.0
+  url_launcher: ^6.3.1
+  uuid: ^4.5.1
+  flutter_animate: ^4.5.2
+  tuple: ^2.0.2
+  permission_handler: ^11.4.0
+  file_picker: ^10.3.2
+  flutter_gen: ^5.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  drift_dev: ^2.23.1
+  build_runner: ^2.4.14
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  
+  assets:
+    - assets/fonts/NotoSans-Regular.ttf
+    - assets/icons/app_logo.png
+    - assets/icons/app_icon_rounded.png
+    - assets/patterns/black-scales.png
+    - assets/patterns/dark-circles.png
+
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/Lato-Regular.ttf
+    - family: MerriWeather
+      fonts:
+        - asset: assets/fonts/Merriweather-Regular.ttf
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf

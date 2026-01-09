@@ -1,0 +1,709 @@
+{
+  "applicationStarted": "Application started",
+  "@applicationStarted": {
+    "description": "Displayed when the application is successfully launched."
+  },
+  "flutterDemo": "Flutter Demo",
+  "@flutterDemo": {
+    "description": "Title for the Flutter demo section."
+  },
+  "transactionType": "Transaction Type",
+  "@transactionType": {
+    "description": "Label for selecting the type of transaction."
+  },
+  "transactionTypes": "Transaction Types",
+  "@transactionTypes": {
+    "description": "Transaction Types title"
+  },
+  "fundForTransaction": "Fund for Transaction",
+  "@fundForTransaction": {
+    "description": "Label indicating the fund used for a transaction."
+  },
+  "accountForTransaction": "Account for Transaction",
+  "@accountForTransaction": {
+    "description": "Label indicating the account associated with a transaction."
+  },
+  "select": "Select {title}",
+  "@select": {
+    "description": "Generic label for selecting an item.",
+    "placeholders": {
+      "title": {
+        "example": "Transaction Type"
+      }
+    }
+  },
+  "transactionNo": "Transaction #{no}",
+  "@transactionNo": {
+    "description": "The current transaction number.",
+    "placeholders": {
+      "no": {
+        "example": "1"
+      }
+    }
+  },
+  "transactionDate": "Transaction Date",
+  "@transactionDate": {
+    "description": "The current transaction date."
+  },
+  "paymentDate": "Payment Date",
+  "@paymentDate": {
+    "description": "The date of payment."
+  },
+  "myXAccounts": "My {account} Accounts",
+  "@myXAccounts": {
+    "description": "Generic label for account lists.",
+    "placeholders": {
+      "account": {
+        "example": "Income"
+      }
+    }
+  },
+  "skip": "Skip",
+  "@skip": {
+    "description": "Button label for skipping an action."
+  },
+  "cashAccounts": "Cash Accounts : {count}",
+  "@cashAccounts": {
+    "description": "Label for displaying the number of cash accounts.",
+    "placeholders": {
+      "count": {
+        "example": "5"
+      }
+    }
+  },
+  "bankAccounts": "Bank Accounts : {count}",
+  "@bankAccounts": {
+    "description": "Label for displaying the number of bank accounts.",
+    "placeholders": {
+      "count": {
+        "example": "3"
+      }
+    }
+  },
+  "myProfiles": "My Profiles",
+  "@myProfiles": {
+    "description": "Section title for user profiles."
+  },
+  "expenses": "Expenses",
+  "@expenses": {
+    "description": "Expenses."
+  },
+  "incomes": "Incomes",
+  "@incomes": {
+    "description": "Incomes."
+  },
+  "cash": "Cash",
+  "@cash": {
+    "description": "Cash."
+  },
+  "bank": "Bank",
+  "@bank": {
+    "description": "Bank."
+  },
+  "expense": "Expense",
+  "@expense": {
+    "description": "Expense."
+  },
+  "income": "Income",
+  "@income": {
+    "description": "Income."
+  },
+  "myDashboard": "My Dashboard",
+  "@myDashboard": {
+    "description": "My Dashboard."
+  },
+  "myBudgets": "My Budgets",
+  "@myBudgets": {
+    "description": "My Budgets."
+  },
+  "balance": "Balance",
+  "@balance": {
+    "description": "Budget calculated balance."
+  },
+  "budgetForm": "Budget Form",
+  "@budgetForm": {
+    "description": "Budget Form title"
+  },
+  "theme": "Theme",
+  "@theme": {
+    "description": "Theme."
+  },
+  "useSystemTheme": "Use System Theme?",
+  "@useSystemTheme": {
+    "description": "Question to use system theme."
+  },
+  "myFunds": "My Funds",
+  "@myFunds": {
+    "description": "My Funds."
+  },
+  "myCredits": "My Credits",
+  "@myCredits": {
+    "description": "My Credits."
+  },
+  "otherAccounts": "Other Accounts",
+  "@otherAccounts": {
+    "description": "Other Accounts."
+  },
+  "myFundsAndCredits": "My Funds & Credits",
+  "@myFundsAndCredits": {
+    "description": "My Funds & Credits."
+  },
+  "myInsights": "My Insights",
+  "@myInsights": {
+    "description": "My Insights title."
+  },
+  "fund": "Fund",
+  "@fund": {
+    "description": "Fund."
+  },
+  "fundType": "Fund Type",
+  "@fundType": {
+    "description": "Fund Type."
+  },
+  "myBalance": "Funds Balance",
+  "@myBalance": {
+    "description": "My Balance."
+  },
+  "receipt": "Receipt",
+  "@receipt": {
+    "description": "Receipt."
+  },
+  "receipts": "Receipts",
+  "@receipts": {
+    "description": "Receipts."
+  },
+  "accounts": "Accounts",
+  "@accounts": {
+    "description": "Accounts."
+  },
+  "account": "Account",
+  "@account": {
+    "description": "Account."
+  },
+  "addAccount": "Add Account",
+  "@addAccount": {
+    "description": "Label to add Account."
+  },
+  "amount": "Amount",
+  "@amount": {
+    "description": "Amount."
+  },
+  "payment": "Payment",
+  "@payment": {
+    "description": "Payment."
+  },
+  "payments": "Payments",
+  "@payments": {
+    "description": "Payments."
+  },
+  "currency": "Currency",
+  "@currency": {
+    "description": "Currency."
+  },
+  "narration": "Details",
+  "@narration": {
+    "description": "Narration."
+  },
+  "referenceNo": "Reference #",
+  "@referenceNo": {
+    "description": "Reference for transaction."
+  },
+  "notEnoughData": "Not Enough Data",
+  "@notEnoughData": {
+    "description": "Not enough data available for insights."
+  },
+  "expensesSplit": "Expenses Split",
+  "@expensesSplit": {
+    "description": "Title for expenses split pie chart"
+  },
+  "dailyTransactions": "Daily Transactions ",
+  "@dailyTransactions": {
+    "description": "Title for expense-income daily bar chart"
+  },
+  "averageExpenses": "Average Expenses ",
+  "@averageExpenses": {
+    "description": "Title for expense average bar chart"
+  },
+  "budgetedExpenses": "Budgeted Expenses ",
+  "@budgetedExpenses": {
+    "description": "Title for budgeted expense comparison bar chart"
+  },
+  "fundsBalance": "Funds Balance ",
+  "@fundsBalance": {
+    "description": "Title for funds balance line chart"
+  },
+  "add": "Add",
+  "@add": {
+    "description": "Add."
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile."
+  },
+  "addNew": "Add New +",
+  "@addNew": {
+    "description": "Add."
+  },
+  "myTransactions": "My Transactions",
+  "@myTransactions": {
+    "description": "My Transactions."
+  },
+  "filters": "Filters",
+  "@filters": {
+    "description": "Filter menu title"
+  },
+  "toggleTheme": "Toggle Theme",
+  "@toggleTheme": {
+    "description": "Button label for switching between light and dark themes."
+  },
+  "submitting": "Submitting..",
+  "@submitting": {
+    "description": "Indicates an ongoing submission process."
+  },
+  "transferFrom": "Transfer - {account}",
+  "@transferFrom": {
+    "description": "Label for selecting the source account for a transfer.",
+    "placeholders": {
+      "account": {
+        "example": "Bank"
+      }
+    }
+  },
+  "paidFrom": "Paid from {account}",
+  "@paidFrom": {
+    "description": "Label for selecting the source account for a payment.",
+    "placeholders": {
+      "account": {
+        "example": "Bank"
+      }
+    }
+  },
+  "fromToDate": "From {startDate} to {endDate}",
+  "@fromToDate": {
+    "description": "Dates filter",
+    "placeholders": {
+      "startDate": {
+        "example": "20-01-2024"
+      },
+      "endDate": {
+        "example": "20-01-2024"
+      }
+    }
+  },
+  "receivedIn": "Received in {account}",
+  "@receivedIn": {
+    "description": "Label indicating the destination account for received funds.",
+    "placeholders": {
+      "account": {
+        "example": "Cash"
+      }
+    }
+  },
+  "search": "Search",
+  "@search": {
+    "description": "Placeholder text for a search field."
+  },
+  "addPhotos": "Add Photos",
+  "@addPhotos": {
+    "description": "Button label for uploading images."
+  },
+  "pursenal": "Pursenal",
+  "@pursenal": {
+    "description": "Application name or branding text."
+  },
+  "main": "Main",
+  "@main": {
+    "description": "Label for the main section of the application."
+  },
+  "more": "More",
+  "@more": {
+    "description": "Standard label for navigating to more accounts, transactions etc."
+  },
+  "recentTransactions": "Recent Transactions",
+  "@recentTransactions": {
+    "description": "Label for recent transactions."
+  },
+  "funds": "Funds",
+  "@funds": {
+    "description": "Section title for funds management."
+  },
+  "copy": "Copy",
+  "@copy": {
+    "description": "Copy something"
+  },
+  "edit": "Edit",
+  "@edit": {
+    "description": "Edit something"
+  },
+  "dates": "Dates",
+  "@dates": {
+    "description": "Section for dates"
+  },
+  "transactions": "Transactions",
+  "@transactions": {
+    "description": "Label for viewing all transactions."
+  },
+  "editThisTransaction": "Edit this Transaction",
+  "@editThisTransaction": {
+    "description": "Label to edit current transaction."
+  },
+  "newProfile": "New Profile",
+  "@newProfile": {
+    "description": "Label to create new profile."
+  },
+  "editThisProfile": "Edit this Profile",
+  "@editThisProfile": {
+    "description": "Label to edit current profile."
+  },
+  "copyThisTransaction": "Copy this Transaction",
+  "@copyThisTransaction": {
+    "description": "Label to copy current transaction."
+  },
+  "deleteThisTransaction": "Delete this Transaction",
+  "@deleteThisTransaction": {
+    "description": "Label to delete current transaction."
+  },
+  "copyThisProfile": "Copy this Profile",
+  "@copyThisProfile": {
+    "description": "Label to copy current profile."
+  },
+  "deleteThisProfile": "Delete this Transaction",
+  "@deleteThisProfile": {
+    "description": "Label to delete current profile."
+  },
+  "allProfiles": "All Profiles",
+  "@allProfiles": {
+    "description": "Label for list of all profiles."
+  },
+  "deleteThisTransactionQn": "Delete this transaction?",
+  "@deleteThisTransactionQn": {
+    "description": "Query to confirm deletion of current transaction."
+  },
+  "deleteThisProjectQn": "Delete this project?",
+  "@deleteThisProjectQn": {
+    "description": "Query to confirm deletion of current project."
+  },
+  "deleteThisAccountQn": "Delete this account?",
+  "@deleteThisAccountQn": {
+    "description": "Query to confirm deletion of current account."
+  },
+  "deleteAccountWarning": "WARNING: This action will delete all related transactions and budget entries",
+  "@deleteAccountWarning": {
+    "description": "Account deletion warning"
+  },
+  "deleteThisBudgetQn": "Delete this Budget?",
+  "@deleteThisBudgetQn": {
+    "description": "Query to confirm deletion of current budget."
+  },
+  "deleteBudgetWarning": "WARNING: This action will delete this budget and related entries",
+  "@deleteBudgetWarning": {
+    "description": "Budget deletion warning"
+  },
+  "deleteThisReminderQn": "Delete this Reminder?",
+  "@deleteThisReminderQn": {
+    "description": "Query to confirm deletion of current payment reminder."
+  },
+  "unknownCurrency": "Unknown Currency",
+  "@unknownCurrency": {
+    "description": "Displayed when the currency type is not recognized."
+  },
+  "accountType": "Account Type",
+  "@accountType": {
+    "description": "Label for specifying the type of an account."
+  },
+  "openingDate": "Opening Date",
+  "@openingDate": {
+    "description": "Label for selecting the date an account was opened."
+  },
+  "openingBalance": "Opening Balance",
+  "@openingBalance": {
+    "description": "Field label for entering the initial balance of an account."
+  },
+  "closingBalance": "Closing Balance",
+  "@closingBalance": {
+    "description": "Field label for entering the ending balance of an account."
+  },
+  "startDate": "Start Date",
+  "@startDate": {
+    "description": "Label for selecting a start date."
+  },
+  "endDate": "End Date",
+  "@endDate": {
+    "description": "Label for selecting an end date."
+  },
+  "accountForm": "Account Form",
+  "@accountForm": {
+    "description": "Title for the account creation or editing form."
+  },
+  "accountName": "Account Name",
+  "@accountName": {
+    "description": "Label for entering the name of an account."
+  },
+  "holderName": "Holder Name",
+  "@holderName": {
+    "description": "Label for specifying the account holder's name."
+  },
+  "institution": "Institution",
+  "@institution": {
+    "description": "Label for entering the name of a financial institution."
+  },
+  "branch": "Branch",
+  "@branch": {
+    "description": "Label for specifying a bank branch."
+  },
+  "branchCode": "Branch Code",
+  "@branchCode": {
+    "description": "Label for entering a branch code."
+  },
+  "cardNetwork": "Card Network",
+  "@cardNetwork": {
+    "description": "Label for specifying the card network (e.g., Visa, MasterCard)."
+  },
+  "cardNo": "Card No.",
+  "@cardNo": {
+    "description": "Label for entering the card number."
+  },
+  "statementDate": "Statement Date",
+  "@statementDate": {
+    "description": "Label for selecting the date of a financial statement."
+  },
+  "accountNo": "Account No.",
+  "@accountNo": {
+    "description": "Label for entering an account number."
+  },
+  "agreementNo": "Agreement No.",
+  "@agreementNo": {
+    "description": "Label for specifying an agreement number."
+  },
+  "interestRate": "Interest Rate",
+  "@interestRate": {
+    "description": "Label for entering the interest rate of an account."
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Button label for saving changes."
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Button label for deleting an item."
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Button label for canceling an action."
+  },
+  "profileForm": "Profile Form",
+  "@profileForm": {
+    "description": "Title for the user profile form."
+  },
+  "profileName": "Profile Name",
+  "@profileName": {
+    "description": "Label for entering the profile name."
+  },
+  "budgetName": "Budget Name",
+  "@budgetName": {
+    "description": "Label for entering the budget name."
+  },
+  "nickName": "Nick Name",
+  "@nickName": {
+    "description": "Label for specifying a nickname."
+  },
+  "decimalPoints": "Decimal Points",
+  "@decimalPoints": {
+    "description": "Label for specifying the number of decimal points to display."
+  },
+  "address": "Address",
+  "@address": {
+    "description": "Label for entering a street address."
+  },
+  "zip": "ZIP Code",
+  "@zip": {
+    "description": "Label for entering a ZIP or postal code."
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Label for entering an email address."
+  },
+  "phone": "Phone",
+  "@phone": {
+    "description": "Label for entering a phone number."
+  },
+  "profileId": "Profile ID",
+  "@profileId": {
+    "description": "Label for specifying a unique profile ID."
+  },
+  "welcomeTo": "Welcome to",
+  "@welcomeTo": {
+    "description": "Welcome to app text."
+  },
+  "appIntroduction": "Your free and open-source cash management app. \nPrivate. Offline. Accurate.",
+  "@appIntroduction": {
+    "description": "Short introduction about app on welcome screen."
+  },
+  "createInitialProfile": "Create a profile for your personal or business transactions first.",
+  "@createInitialProfile": {
+    "description": "Ask the user to create the first profile."
+  },
+  "goToProfileCreation": "Go to profile creation",
+  "@goToProfileCreation": {
+    "description": "To navigate user to profile creation page."
+  },
+  "selectAccountsToCreate": "Select accounts you want to create.",
+  "@selectAccountsToCreate": {
+    "description": "Select accounts user want to create from default list."
+  },
+  "data": "Data",
+  "@data": {
+    "description": "Data"
+  },
+  "details": "Details",
+  "@details": {
+    "description": "Details"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings"
+  },
+  "aboutUs": "About us",
+  "@aboutUs": {
+    "description": "About us"
+  },
+  "contactUs": "Contact us",
+  "@contactUs": {
+    "description": "Contact us"
+  },
+  "supportUs": "Support us",
+  "@supportUs": {
+    "description": "Support us"
+  },
+  "import": "Import data",
+  "@import": {
+    "description": "Import"
+  },
+  "importAccounts": "Import Accounts",
+  "@importAccounts": {
+    "description": "Import Accounts page title."
+  },
+  "export": "Export your data",
+  "@export": {
+    "description": "Export"
+  },
+  "personalisation": "Personalisation",
+  "@personalisation": {
+    "description": "Personalisation option in settings"
+  },
+  "primaryColor": "Primary color",
+  "@primaryColor": {
+    "description": "Primary color option in settings"
+  },
+  "paymentColor": "Payment color",
+  "@paymentColor": {
+    "description": "Payment color option in settings"
+  },
+  "receiptColor": "Receipt color",
+  "@receiptColor": {
+    "description": "Receipt color option in settings"
+  },
+  "selectAColor": "Select a color",
+  "@selectAColor": {
+    "description": "Select color prompt"
+  },
+  "reminder": "Reminder",
+  "@reminder": {
+    "description": "Reminder section in settings"
+  },
+  "expected": "Expected",
+  "@expected": {
+    "description": "Expected - values for budget"
+  },
+  "budgeted": "Budgeted",
+  "@budgeted": {
+    "description": "Budgeted - values for budget"
+  },
+  "actual": "Actual",
+  "@actual": {
+    "description": "Actual - values for budget"
+  },
+  "savings": "Savings",
+  "@savings": {
+    "description": "Savings - for budget"
+  },
+  "project": "Project",
+  "@project": {
+    "description": "Project"
+  },
+  "projectName": "Project name",
+  "@projectName": {
+    "description": "Project"
+  },
+  "reminders": "Reminders",
+  "@reminders": {
+    "description": "Payment reminders"
+  },
+  "budgets": "Budgets",
+  "@budgets": {
+    "description": "Budgets"
+  },
+  "projects": "Projects",
+  "@projects": {
+    "description": "Projects"
+  },
+  "projectStatus": "Project status",
+  "@projectStatus": {
+    "description": "Project status"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "General status for reminders, projects etc"
+  },
+  "projectForm": "Project form",
+  "@projectForm": {
+    "description": "Project form"
+  },
+  "myProjects": "My Projects",
+  "@myProjects": {
+    "description": "Projects"
+  },
+  "myPaymentReminders": "My Payment Reminders",
+  "@myPaymentReminders": {
+    "description": "Payment Reminders"
+  },
+  "paymentReminderTime": "Payment reminder time",
+  "@paymentReminderTime": {
+    "description": "Payment Reminder time"
+  },
+  "pay": "Pay",
+  "@pay": {
+    "description": "Proceed with payment"
+  },
+  "oneTime": "One-time",
+  "@oneTime": {
+    "description": "To note a payment is not recurring"
+  },
+  "totalAdvancePaid": "Total advance paid",
+  "@totalAdvancePaid": {
+    "description": "Advance amount paid to a 'receivable' in total"
+  },
+  "paidDate": "Paid date",
+  "@paidDate": {
+    "description": "Date of payment"
+  },
+  "budgetPerformance": "Budget Performance",
+  "@budgetPerformance": {
+    "description": "Budget performance"
+  },
+  "reminderSetTime": "Reminder set time : {time}",
+  "@reminderSetTime": {
+    "description": "Label indicating the time the reminder rings.",
+    "placeholders": {
+      "time": {
+        "example": "00:00"
+      }
+    }
+  },
+  "setDailyReminder": "Set Daily Entry Reminder?",
+  "@setDailyReminder": {
+    "description": "Prompt to ask for daily reminder to enter transactions."
+  },
+  "@@locale": "en",
+  "@@last_modified": "2025-02-05T11:02:11.946484"
+}
