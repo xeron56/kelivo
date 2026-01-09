@@ -20,10 +20,16 @@ class AddTransactionButtonGroup extends StatelessWidget {
   final bool isWide;
   @override
   Widget build(BuildContext context) {
-    final double buttonRadius = isWide ? 32 : 12;
+    final double buttonRadius = isWide ? 24 : 12;
+    // Compact height settings
+    const double totalHeight = 90;
+    const double buttonHeight = 45;
+    const double centerCircleSize = 40;
+    const double iconSize = 24;
+
     return Center(
       child: SizedBox(
-        height: 120,
+        height: totalHeight,
         child: Stack(
           children: [
             Align(
@@ -47,7 +53,7 @@ class AddTransactionButtonGroup extends StatelessWidget {
                   );
                 },
                 child: Container(
-                  height: 60,
+                  height: buttonHeight,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: appViewmodel.receiptColor,
@@ -58,10 +64,11 @@ class AddTransactionButtonGroup extends StatelessWidget {
                   child: Center(
                     child: Text(
                       AppLocalizations.of(context)!.receipt,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 24,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -89,7 +96,7 @@ class AddTransactionButtonGroup extends StatelessWidget {
                   );
                 },
                 child: Container(
-                  height: 60,
+                  height: buttonHeight,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: appViewmodel.paymentColor,
@@ -100,35 +107,33 @@ class AddTransactionButtonGroup extends StatelessWidget {
                   child: Center(
                     child: Text(
                       AppLocalizations.of(context)!.payment,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 24,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
 
-            // White Hole (Center Text Area)
+            // White Hole (Center Text Area) -> Scaled down
             Align(
               alignment: Alignment.centerLeft,
               child: Container(
-                  width: 60,
-                  height: 60,
-                  margin: const EdgeInsets.only(left: 20),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    color: Theme.of(context).primaryColor.withAlpha(100),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.add,
-                      size: 50,
-                      color: Colors.white,
-                    ),
-                  )),
+                width: centerCircleSize,
+                height: centerCircleSize,
+                margin: const EdgeInsets.only(left: 16),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(centerCircleSize / 2),
+                  color: Theme.of(context).primaryColor.withOpacity(0.4),
+                ),
+                child: const Center(
+                  child: Icon(Icons.add, size: iconSize, color: Colors.white),
+                ),
+              ),
             ),
           ],
         ),
@@ -136,5 +141,3 @@ class AddTransactionButtonGroup extends StatelessWidget {
     );
   }
 }
-
-

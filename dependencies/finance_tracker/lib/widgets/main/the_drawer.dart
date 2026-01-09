@@ -12,10 +12,7 @@ import 'package:finance_tracker/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TheDrawer extends StatelessWidget {
-  const TheDrawer({
-    super.key,
-    required this.viewmodel,
-  });
+  const TheDrawer({super.key, required this.viewmodel});
   final MainViewmodel viewmodel;
 
   @override
@@ -42,10 +39,11 @@ class TheDrawer extends StatelessWidget {
                     ),
                     Card(
                       shape: RoundedRectangleBorder(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(14)),
-                          side: BorderSide(
-                              color: Theme.of(context).primaryColor)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(14),
+                        ),
+                        side: BorderSide(color: Theme.of(context).primaryColor),
+                      ),
                       child: ExpansionTile(
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(14)),
@@ -75,19 +73,25 @@ class TheDrawer extends StatelessWidget {
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 2.0, horizontal: 12),
+                                vertical: 2.0,
+                                horizontal: 12,
+                              ),
                               child: Text(
-                                AppLocalizations.of(context)!
-                                    .cashAccounts(viewmodel.cashCountinProfile),
+                                AppLocalizations.of(
+                                  context,
+                                )!.cashAccounts(viewmodel.cashCountinProfile),
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 2.0, horizontal: 12),
+                                vertical: 2.0,
+                                horizontal: 12,
+                              ),
                               child: Text(
-                                AppLocalizations.of(context)!
-                                    .bankAccounts(viewmodel.bankCountinProfile),
+                                AppLocalizations.of(
+                                  context,
+                                )!.bankAccounts(viewmodel.bankCountinProfile),
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ),
@@ -102,20 +106,18 @@ class TheDrawer extends StatelessWidget {
                             onTap: () {
                               Navigator.pop(context);
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ProfileEntryScreen(
-                                      profile: viewmodel.selectedProfile,
-                                    ),
-                                  )).then((_) async {
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProfileEntryScreen(
+                                    profile: viewmodel.selectedProfile,
+                                  ),
+                                ),
+                              ).then((_) async {
                                 await viewmodel.setLastUpdatedTimeStamp();
                                 await viewmodel.init();
                               });
                             },
-                            trailing: const Icon(
-                              Icons.edit,
-                              size: 16,
-                            ),
+                            trailing: const Icon(Icons.edit, size: 16),
                           ),
                           ListTile(
                             title: Text(
@@ -125,19 +127,17 @@ class TheDrawer extends StatelessWidget {
                             onTap: () {
                               Navigator.pop(context);
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ProfileEntryScreen(),
-                                  )).then((_) async {
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ProfileEntryScreen(),
+                                ),
+                              ).then((_) async {
                                 await viewmodel.setLastUpdatedTimeStamp();
                                 await viewmodel.init();
                               });
                             },
-                            trailing: const Icon(
-                              Icons.add,
-                              size: 16,
-                            ),
+                            trailing: const Icon(Icons.add, size: 16),
                           ),
                           ListTile(
                             title: Text(
@@ -150,36 +150,38 @@ class TheDrawer extends StatelessWidget {
                                 context: context,
                                 builder: (context) => SimpleDialog(
                                   title: Text(
-                                      AppLocalizations.of(context)!.myProfiles),
+                                    AppLocalizations.of(context)!.myProfiles,
+                                  ),
                                   children: [
-                                    ...viewmodel.profiles.map((p) => ListTile(
-                                          leading: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: CircleAvatar(
-                                              child: Text(
-                                                p.currency.symbol,
-                                                style: const TextStyle(
-                                                    color: Colors.white),
+                                    ...viewmodel.profiles.map(
+                                      (p) => ListTile(
+                                        leading: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: CircleAvatar(
+                                            child: Text(
+                                              p.currency.symbol,
+                                              style: const TextStyle(
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ),
-                                          title: Text(
-                                            p.name,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(fontSize: 28),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          onTap: () {
-                                            viewmodel.selectedProfile = p;
-                                            viewmodel.setIndex(0);
-                                            Navigator.pop(context);
-                                          },
-                                        )),
-                                    const SizedBox(
-                                      height: 20,
-                                    )
+                                        ),
+                                        title: Text(
+                                          p.name,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(fontSize: 18),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        onTap: () {
+                                          viewmodel.selectedProfile = p;
+                                          viewmodel.setIndex(0);
+                                          Navigator.pop(context);
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
                                   ],
                                 ),
                               ).then((_) async {
@@ -201,74 +203,80 @@ class TheDrawer extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Builder(builder: (context) {
-              final AdaptiveThemeManager<ThemeData> adaptiveTheme =
-                  AdaptiveTheme.of(context);
-              final AppViewmodel appViewmodel =
-                  Provider.of<AppViewmodel>(context);
-              if (appViewmodel.isSystemDefaultTheme) {
-                return const SizedBox.shrink();
-              }
-              return Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  title: Text(AppLocalizations.of(context)!.toggleTheme),
-                  onTap: () async {
-                    await AdaptiveTheme.getThemeMode() ==
-                            AdaptiveThemeMode.light
-                        ? adaptiveTheme.setDark()
-                        : await AdaptiveTheme.getThemeMode() ==
+            Builder(
+              builder: (context) {
+                final AdaptiveThemeManager<ThemeData> adaptiveTheme =
+                    AdaptiveTheme.of(context);
+                final AppViewmodel appViewmodel = Provider.of<AppViewmodel>(
+                  context,
+                );
+                if (appViewmodel.isSystemDefaultTheme) {
+                  return const SizedBox.shrink();
+                }
+                return Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    title: Text(AppLocalizations.of(context)!.toggleTheme),
+                    onTap: () async {
+                      await AdaptiveTheme.getThemeMode() ==
+                              AdaptiveThemeMode.light
+                          ? adaptiveTheme.setDark()
+                          : await AdaptiveTheme.getThemeMode() ==
                                 AdaptiveThemeMode.dark
-                            ? adaptiveTheme.setLight()
-                            : adaptiveTheme.setDark();
-                  },
-                  trailing: ValueListenableBuilder(
-                    valueListenable:
-                        AdaptiveTheme.of(context).modeChangeNotifier,
-                    builder: (_, mode, child) {
-                      // update your UI
-
-                      return mode == AdaptiveThemeMode.light
-                          ? const Icon(Icons.light_mode)
-                          : mode == AdaptiveThemeMode.dark
-                              ? const Icon(Icons.dark_mode)
-                              : const Icon(Icons.light_mode);
+                          ? adaptiveTheme.setLight()
+                          : adaptiveTheme.setDark();
                     },
+                    trailing: ValueListenableBuilder(
+                      valueListenable: AdaptiveTheme.of(
+                        context,
+                      ).modeChangeNotifier,
+                      builder: (_, mode, child) {
+                        // update your UI
+
+                        return mode == AdaptiveThemeMode.light
+                            ? const Icon(Icons.light_mode)
+                            : mode == AdaptiveThemeMode.dark
+                            ? const Icon(Icons.dark_mode)
+                            : const Icon(Icons.light_mode);
+                      },
+                    ),
                   ),
-                ),
-              );
-            }),
-            Material(
-              color: Colors.transparent,
-              child: ListTile(
-                  title: Text(AppLocalizations.of(context)!.settings),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsScreen(),
-                        ));
-                  },
-                  trailing: const Icon(Icons.settings)),
+                );
+              },
             ),
             Material(
               color: Colors.transparent,
               child: ListTile(
-                  title: Text(AppLocalizations.of(context)!.aboutUs),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AboutUsScreen(),
-                        ));
-                  },
-                  trailing: const Icon(Icons.info_outline)),
+                title: Text(AppLocalizations.of(context)!.settings),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+                trailing: const Icon(Icons.settings),
+              ),
             ),
-            const SizedBox(
-              height: 20,
+            Material(
+              color: Colors.transparent,
+              child: ListTile(
+                title: Text(AppLocalizations.of(context)!.aboutUs),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AboutUsScreen(),
+                    ),
+                  );
+                },
+                trailing: const Icon(Icons.info_outline),
+              ),
             ),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -299,14 +307,10 @@ class TheDrawer extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(
-              height: 20,
-            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 }
-
-

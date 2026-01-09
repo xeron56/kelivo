@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import 'package:provider/provider.dart';
 import 'package:finance_tracker/app/global/dimensions.dart';
 import 'package:finance_tracker/core/models/domain/profile.dart';
@@ -28,289 +28,223 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profilesDriftRepository =
-        Provider.of<ProfilesDriftRepository>(context, listen: false);
-    final accountsDriftRepository =
-        Provider.of<AccountsDriftRepository>(context, listen: false);
+    final profilesDriftRepository = Provider.of<ProfilesDriftRepository>(
+      context,
+      listen: false,
+    );
+    final accountsDriftRepository = Provider.of<AccountsDriftRepository>(
+      context,
+      listen: false,
+    );
     final transactionsDriftRepository =
         Provider.of<TransactionsDriftRepository>(context, listen: false);
-    final balancesDriftRepository =
-        Provider.of<BalancesDriftRepository>(context, listen: false);
+    final balancesDriftRepository = Provider.of<BalancesDriftRepository>(
+      context,
+      listen: false,
+    );
     final accountTypesDriftRepository =
         Provider.of<AccountTypesDriftRepository>(context, listen: false);
 
     final appViewmodel = Provider.of<AppViewmodel>(context);
     return ChangeNotifierProvider<DashboardViewmodel>(
       create: (context) => DashboardViewmodel(
-          profilesDriftRepository,
-          accountsDriftRepository,
-          transactionsDriftRepository,
-          balancesDriftRepository,
-          accountTypesDriftRepository,
-          profile: profile)
-        ..init(),
+        profilesDriftRepository,
+        accountsDriftRepository,
+        transactionsDriftRepository,
+        balancesDriftRepository,
+        accountTypesDriftRepository,
+        profile: profile,
+      )..init(),
       builder: (context, child) => Consumer<DashboardViewmodel>(
-        builder: (context, viewmodel, child) =>
-            LayoutBuilder(builder: (context, constraints) {
-          final isWide = constraints.maxWidth > smallWidth;
-          final isVeryWide = constraints.maxWidth > cardWidth * 2;
-          return Scaffold(
-            body: LoadingBody(
-              loadingStatus: viewmodel.loadingStatus,
-              errorText: viewmodel.errorText,
-              widget: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        child: Text(
-                          AppLocalizations.of(context)!.myDashboard,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                      ),
-                    ),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      runAlignment: WrapAlignment.center,
-                      children: [
-                        MyBalanceCard(
-                          profile: profile,
-                          viewmodel: viewmodel,
-                          isWide: isVeryWide,
-                        ),
-                        Visibility(
-                          visible: viewmodel.canAddTransaction & !isVeryWide,
-                          child: AddTransactionCard(
-                            appViewmodel: appViewmodel,
-                            profile: profile,
-                            viewmodel: viewmodel,
+        builder: (context, viewmodel, child) => LayoutBuilder(
+          builder: (context, constraints) {
+            final isVeryWide = constraints.maxWidth > cardWidth * 2;
+            return Scaffold(
+              body: LoadingBody(
+                loadingStatus: viewmodel.loadingStatus,
+                errorText: viewmodel.errorText,
+                widget: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)!.myDashboard,
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                         ),
-                        Visibility(
-                          visible: isWide,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            width: double.infinity,
-                            height: 60,
-                            child: Center(
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: MyBalanceCard(
+                              profile: profile,
+                              viewmodel: viewmodel,
+                              isWide: isVeryWide,
+                            ),
+                          ),
+                          if (viewmodel.canAddTransaction && !isVeryWide)
+                            Center(
+                              child: AddTransactionCard(
+                                appViewmodel: appViewmodel,
+                                profile: profile,
+                                viewmodel: viewmodel,
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
+                            child: Text(
+                              "Quick Actions",
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                // Calculate item width for a responsive grid look using Wrap
+                                // On wide screens, we might want 4 items in a row.
+                                // On narrow, maybe 2 items per row.
+                                final width = constraints.maxWidth;
+                                final itemWidth = width / (width > 600 ? 4 : 2);
+
+                                return Wrap(
+                                  alignment: WrapAlignment.start,
+                                  runSpacing: 0,
+                                  spacing: 0,
                                   children: [
-                                    NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
+                                    SizedBox(
+                                      width: itemWidth,
+                                      height: 50,
+                                      child: NavButton1(
+                                        onTap: () {
+                                          Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
                                                   BudgetsScreen(
-                                                profile:
-                                                    viewmodel.selectedProfile,
-                                              ),
-                                            ));
-                                      },
-                                      title:
-                                          AppLocalizations.of(context)!.budgets,
-                                      icon: Icons.calculate,
+                                                    profile: viewmodel
+                                                        .selectedProfile,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                        title: AppLocalizations.of(
+                                          context,
+                                        )!.budgets,
+                                        icon: Icons.calculate_outlined,
+                                      ),
                                     ),
-                                    NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
+                                    SizedBox(
+                                      width: itemWidth,
+                                      height: 50,
+                                      child: NavButton1(
+                                        onTap: () {
+                                          Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
                                                   ProjectsScreen(
-                                                profile:
-                                                    viewmodel.selectedProfile,
-                                              ),
-                                            ));
-                                      },
-                                      title: AppLocalizations.of(context)!
-                                          .projects,
-                                      icon: Icons.assignment,
+                                                    profile: viewmodel
+                                                        .selectedProfile,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                        title: AppLocalizations.of(
+                                          context,
+                                        )!.projects,
+                                        icon: Icons.assignment_outlined,
+                                      ),
                                     ),
-                                    NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
+                                    SizedBox(
+                                      width: itemWidth,
+                                      height: 50,
+                                      child: NavButton1(
+                                        onTap: () {
+                                          Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                                builder: (context) =>
-                                                    PaymentRemindersScreen(
-                                                        profile: profile)));
-                                      },
-                                      title: AppLocalizations.of(context)!
-                                          .reminders,
-                                      icon: Icons.event_available,
+                                              builder: (context) =>
+                                                  PaymentRemindersScreen(
+                                                    profile: profile,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                        title: AppLocalizations.of(
+                                          context,
+                                        )!.reminders,
+                                        icon: Icons.event_available_outlined,
+                                      ),
                                     ),
-                                    NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
+                                    SizedBox(
+                                      width: itemWidth,
+                                      height: 50,
+                                      child: NavButton1(
+                                        onTap: () {
+                                          Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
                                                   AccountsScreen(
-                                                profile:
-                                                    viewmodel.selectedProfile,
-                                              ),
-                                            ));
-                                      },
-                                      title:
-                                          "${AppLocalizations.of(context)!.expenses} & ${AppLocalizations.of(context)!.incomes}",
-                                      icon: Icons.table_chart_outlined,
+                                                    profile: viewmodel
+                                                        .selectedProfile,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                        title: AppLocalizations.of(
+                                          context,
+                                        )!.accounts,
+                                        icon: Icons
+                                            .account_balance_wallet_outlined,
+                                      ),
                                     ),
                                   ],
-                                ),
-                              ),
+                                );
+                              },
                             ),
-                          )
-                              .animate(delay: 100.ms)
-                              .scale(
-                                  begin: const Offset(1.02, 1.02),
-                                  duration: 100.ms)
-                              .fade(curve: Curves.easeInOut, duration: 100.ms),
-                        ),
-                        Visibility(
-                          visible: !isWide,
-                          child: Container(
-                            padding: const EdgeInsets.only(
-                                top: 2, left: 2, right: 2),
-                            width: double.infinity,
-                            height: 60,
-                            child: Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  BudgetsScreen(
-                                                profile:
-                                                    viewmodel.selectedProfile,
-                                              ),
-                                            ));
-                                      },
-                                      title:
-                                          AppLocalizations.of(context)!.budgets,
-                                      icon: Icons.calculate,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProjectsScreen(
-                                                profile:
-                                                    viewmodel.selectedProfile,
-                                              ),
-                                            ));
-                                      },
-                                      title: AppLocalizations.of(context)!
-                                          .projects,
-                                      icon: Icons.assignment,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (viewmodel.recentTransactions.isNotEmpty)
+                            Center(
+                              child: TransactionsCard(viewmodel: viewmodel),
                             ),
-                          )
-                              .animate(delay: 100.ms)
-                              .scale(
-                                  begin: const Offset(1.02, 1.02),
-                                  duration: 100.ms)
-                              .fade(curve: Curves.easeInOut, duration: 100.ms),
-                        ),
-                        Visibility(
-                          visible: !isWide,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            width: double.infinity,
-                            height: 60,
-                            child: Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    PaymentRemindersScreen(
-                                                        profile: profile)));
-                                      },
-                                      title: AppLocalizations.of(context)!
-                                          .reminders,
-                                      icon: Icons.event_available,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: NavButton1(
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  AccountsScreen(
-                                                profile:
-                                                    viewmodel.selectedProfile,
-                                              ),
-                                            ));
-                                      },
-                                      title: AppLocalizations.of(context)!
-                                          .accounts,
-                                      icon: Icons.table_chart_outlined,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          if (viewmodel.fAccountTypes.isNotEmpty)
+                            Center(
+                              child: AddNewAccountCard(viewmodel: viewmodel),
                             ),
-                          )
-                              .animate(delay: 100.ms)
-                              .scale(
-                                  begin: const Offset(1.02, 1.02),
-                                  duration: 100.ms)
-                              .fade(curve: Curves.easeInOut, duration: 100.ms),
-                        ),
-                        Visibility(
-                            visible: viewmodel.recentTransactions.isNotEmpty,
-                            child: TransactionsCard(
-                              viewmodel: viewmodel,
-                            )),
-                        Visibility(
-                            visible: viewmodel.fAccountTypes.isNotEmpty,
-                            child: AddNewAccountCard(
-                              viewmodel: viewmodel,
-                            )),
-                        const SizedBox(
-                          height: 300,
-                        )
-                      ],
-                    ),
-                  ],
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                resetErrorTextFn: () => viewmodel.resetErrorText(),
               ),
-              resetErrorTextFn: () => viewmodel.resetErrorText(),
-            ),
-          );
-        }),
+            );
+          },
+        ),
       ),
     );
   }
 }
-
-

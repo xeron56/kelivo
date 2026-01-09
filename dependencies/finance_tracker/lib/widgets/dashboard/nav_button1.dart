@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:finance_tracker/providers/theme_provider.dart';
 
 class NavButton1 extends StatelessWidget {
   const NavButton1({
@@ -16,39 +14,37 @@ class NavButton1 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
-      elevation: 1,
-      color: themeProvider.primary800,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 0,
+      color: colorScheme.secondaryContainer,
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           onTap();
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           height: double.maxFinite,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.fade,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(fontSize: 18, color: themeProvider.white),
+              Icon(icon, color: colorScheme.onSecondaryContainer, size: 18),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              const SizedBox(
-                width: 10,
-              ),
-              Icon(
-                icon,
-                color: themeProvider.white,
-                size: 22,
-              )
             ],
           ),
         ),
@@ -56,4 +52,3 @@ class NavButton1 extends StatelessWidget {
     );
   }
 }
-

@@ -69,10 +69,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           opacity: _opacity2,
                           child: Text(
                             AppLocalizations.of(context)!.pursenal,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineLarge
-                                ?.copyWith(fontSize: 40),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineLarge?.copyWith(fontSize: 28),
                           ),
                         ),
                       ],
@@ -100,10 +99,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
                       AppLocalizations.of(context)!.appIntroduction,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(height: 1.5),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(height: 1.5),
                     ),
                   ),
                 ),
@@ -128,24 +126,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
                       onTap: () => Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProfileEntryScreen(),
-                          ),
-                          (s) => false),
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileEntryScreen(),
+                        ),
+                        (s) => false,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Text(
                             AppLocalizations.of(context)!.goToProfileCreation,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
+                            style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(
-                                    color: Theme.of(context).primaryColor),
+                                  color: Theme.of(context).primaryColor,
+                                ),
                           ),
-                          Icon(Icons.keyboard_double_arrow_right,
-                              size: 50, color: Theme.of(context).primaryColor)
+                          Icon(
+                            Icons.keyboard_double_arrow_right,
+                            size: 32,
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ],
                       ),
                     ),
@@ -160,5 +161,3 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 }
-
-
