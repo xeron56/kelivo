@@ -8,20 +8,21 @@ import 'package:finance_tracker/viewmodels/app_viewmodel.dart';
 
 class TransactionTile2 extends StatelessWidget {
   /// A list tile for a single transaction : mobile
-  const TransactionTile2(
-      {super.key,
-      required this.vchDate,
-      required this.accountName,
-      required this.amount,
-      required this.onClick,
-      required this.vchType,
-      required this.transactionID,
-      this.fundName,
-      required this.narr,
-      this.isTransfer = false,
-      required this.currency,
-      this.isColorful = false,
-      this.isNegative = false});
+  const TransactionTile2({
+    super.key,
+    required this.vchDate,
+    required this.accountName,
+    required this.amount,
+    required this.onClick,
+    required this.vchType,
+    required this.transactionID,
+    this.fundName,
+    required this.narr,
+    this.isTransfer = false,
+    required this.currency,
+    this.isColorful = false,
+    this.isNegative = false,
+  });
 
   /// Transaction voucher date
   final DateTime vchDate;
@@ -74,22 +75,24 @@ class TransactionTile2 extends StatelessWidget {
               children: [
                 Text(
                   "#$transactionID",
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Expanded(
                   child: Text(
                     fundName != null
                         ? isTransfer
-                            ? AppLocalizations.of(context)!
-                                .transferFrom(fundName!)
-                            : vchType == VoucherType.payment
-                                ? AppLocalizations.of(context)!
-                                    .paidFrom(fundName!)
-                                : AppLocalizations.of(context)!
-                                    .receivedIn(fundName!)
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.transferFrom(fundName!)
+                              : vchType == VoucherType.payment
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.paidFrom(fundName!)
+                              : AppLocalizations.of(
+                                  context,
+                                )!.receivedIn(fundName!)
                         : "",
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
@@ -108,30 +111,36 @@ class TransactionTile2 extends StatelessWidget {
                       Text(
                         accountName,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                         maxLines: 2,
                       ),
                       Padding(
                         padding: const EdgeInsets.only(left: 10),
-                        child: Text(narr,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall),
-                      )
+                        child: Text(
+                          narr,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Text(
-                  "${isTransfer ? "" : isNegative ? "-" : "+"} ${amount.toCurrencyString(currency)}",
+                  "${isTransfer
+                      ? ""
+                      : isNegative
+                      ? "-"
+                      : "+"} ${amount.toCurrencyString(currency)}",
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: (isTransfer) || !isColorful
-                          ? null
-                          : isNegative
-                              ? appViewmodel.paymentColor
-                              : appViewmodel.receiptColor),
+                    fontWeight: FontWeight.bold,
+                    color: (isTransfer) || !isColorful
+                        ? null
+                        : isNegative
+                        ? appViewmodel.paymentColor
+                        : appViewmodel.receiptColor,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.fade,
                 ),
@@ -146,5 +155,3 @@ class TransactionTile2 extends StatelessWidget {
     );
   }
 }
-
-

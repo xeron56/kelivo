@@ -43,7 +43,11 @@ import '../../assistant/widgets/tags_manager_dialog.dart';
 import '../../assistant/widgets/assistant_select_sheet.dart';
 import '../../../desktop/hotkeys/sidebar_tab_bus.dart';
 import 'dart:async';
-import 'package:finance_tracker/finance_tracker.dart';
+
+import 'package:finance_tracker/viewmodels/app_viewmodel.dart' as finance_vm;
+import 'package:finance_tracker/screens/main_screen.dart' as finance_main;
+import 'package:finance_tracker/screens/profile_entry_screen.dart'
+    as finance_profile;
 
 class SideDrawer extends StatefulWidget {
   const SideDrawer({
@@ -337,7 +341,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                       .keepSidebarOpenOnTopicTap;
                   if (nextId != null) {
                     widget.onSelectConversation?.call(
-                      nextId!,
+                      nextId,
                       closeDrawer: closeDrawer,
                     );
                   } else {
@@ -520,7 +524,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                                 .keepSidebarOpenOnTopicTap;
                             if (nextId != null) {
                               widget.onSelectConversation?.call(
-                                nextId!,
+                                nextId,
                                 closeDrawer: closeDrawer,
                               );
                             } else {
@@ -774,7 +778,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
       for (final k in keys)
         _ChatGroup(
           label: _dateLabel(context, k),
-          items: (map[k]!..sort((a, b) => b.created.compareTo(a.created)))!,
+          items: (map[k]!..sort((a, b) => b.created.compareTo(a.created))),
         ),
     ];
   }
@@ -1352,6 +1356,16 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                 }(),
               ),
 
+              // Finance Profile Card (Integrated)
+              if (!_isDesktop || !widget.embedded)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: _buildFinanceProfileCard(context, cs, textBase),
+                ),
+
               if (widget.showBottomBar && (!widget.embedded || !_isDesktop))
                 Container(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -1424,7 +1438,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          // 财务按钮（圆形，无水波纹）
+                          // Theme Toggle (replacing separate Finance button)
                           SizedBox(
                             width: 45,
                             height: 45,
@@ -1432,29 +1446,15 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                               child: IosIconButton(
                                 size: 22,
                                 color: textBase,
-                                icon: Lucide.Wallet,
+                                icon: isDark ? Lucide.Sun : Lucide.Moon,
                                 padding: const EdgeInsets.all(10),
                                 onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => FutureBuilder<Widget>(
-                                        future: createFinanceTrackerApp(),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState ==
-                                                  ConnectionState.done &&
-                                              snapshot.hasData) {
-                                            return snapshot.data!;
-                                          }
-                                          return const Scaffold(
-                                            body: Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  );
+                                  final sp = context.read<SettingsProvider>();
+                                  if (sp.themeMode == ThemeMode.dark) {
+                                    sp.setThemeMode(ThemeMode.light);
+                                  } else {
+                                    sp.setThemeMode(ThemeMode.dark);
+                                  }
                                 },
                               ),
                             ),
@@ -1631,6 +1631,195 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AssistantSettingsEditPage(assistantId: id),
+      ),
+    );
+  }
+
+  Widget _buildFinanceProfileCard(
+    BuildContext context,
+    ColorScheme cs,
+    Color textBase,
+  ) {
+    return Consumer<finance_vm.AppViewmodel>(
+      builder: (context, viewmodel, _) {
+        final profile = viewmodel.selectedProfile;
+        if (profile == null) return const SizedBox.shrink();
+
+        return Card(
+          elevation: 0,
+          color: cs.surfaceContainerHigh.withOpacity(0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: const BorderRadius.all(Radius.circular(14)),
+            side: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              dense: true,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+              ),
+              collapsedShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              leading: CircleAvatar(
+                minRadius: 10,
+                maxRadius: 16,
+                backgroundColor: cs.primary,
+                child: Text(
+                  profile.currency.symbol,
+                  style: TextStyle(color: cs.onPrimary, fontSize: 12),
+                ),
+              ),
+              title: Text(
+                profile.name,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textBase,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                'click for details',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: textBase.withOpacity(0.6),
+                ),
+              ),
+              childrenPadding: EdgeInsets.zero,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildFinanceInfoRow(
+                        context,
+                        'Cash Accounts',
+                        '${viewmodel.cashCountinProfile}',
+                        textBase,
+                      ),
+                      _buildFinanceInfoRow(
+                        context,
+                        'Bank Accounts',
+                        '${viewmodel.bankCountinProfile}',
+                        textBase,
+                      ),
+                      const SizedBox(height: 8),
+                      // Actions
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildFinanceActionBtn(
+                            context,
+                            Lucide.LayoutDashboard,
+                            'Open',
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      finance_main.MainScreen(profile: profile),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildFinanceActionBtn(
+                            context,
+                            Lucide.Edit,
+                            'Edit',
+                            () {
+                              Navigator.of(context)
+                                  .push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          finance_profile.ProfileEntryScreen(
+                                            profile: profile,
+                                          ),
+                                    ),
+                                  )
+                                  .then((_) async {
+                                    await viewmodel.init();
+                                  });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFinanceInfoRow(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: color.withOpacity(0.7)),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinanceActionBtn(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: cs.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: cs.primary.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 14, color: cs.primary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: cs.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

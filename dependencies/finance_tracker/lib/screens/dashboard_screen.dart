@@ -55,7 +55,7 @@ class DashboardScreen extends StatelessWidget {
         accountTypesDriftRepository,
         profile: profile,
       )..init(),
-      builder: (context, child) => Consumer<DashboardViewmodel>(
+      child: Consumer<DashboardViewmodel>(
         builder: (context, viewmodel, child) => LayoutBuilder(
           builder: (context, constraints) {
             final isVeryWide = constraints.maxWidth > cardWidth * 2;

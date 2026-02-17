@@ -144,7 +144,13 @@ class TransactionForm extends StatelessWidget {
     InputDecorationTheme mainInputsTheme = InputDecorationTheme(
       fillColor: Theme.of(context).cardColor.withValues(alpha: .7),
       filled: true,
-      labelStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+      labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      floatingLabelStyle: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(8.0)),
         borderSide: BorderSide(width: 0),
@@ -250,12 +256,13 @@ class TransactionForm extends StatelessWidget {
                                               style: viewmodel.isPayment
                                                   ? Theme.of(
                                                       context,
-                                                    ).textTheme.bodyLarge
+                                                    ).textTheme.bodyMedium
                                                   : Theme.of(context)
                                                         .textTheme
-                                                        .titleMedium
+                                                        .titleSmall
                                                         ?.copyWith(
-                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                             ),
                                           ),
@@ -409,12 +416,13 @@ class TransactionForm extends StatelessWidget {
                                               style: !viewmodel.isPayment
                                                   ? Theme.of(
                                                       context,
-                                                    ).textTheme.bodyLarge
+                                                    ).textTheme.bodyMedium
                                                   : Theme.of(context)
                                                         .textTheme
-                                                        .titleMedium
+                                                        .titleSmall
                                                         ?.copyWith(
-                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                             ),
                                           ),
@@ -469,6 +477,12 @@ class TransactionForm extends StatelessWidget {
                                                   context,
                                                 )!.fund,
                                               ),
+                                              labelStyle: TextStyle(
+                                                fontSize: 14,
+                                                color: Theme.of(
+                                                  context,
+                                                ).hintColor,
+                                              ),
                                             ),
                                             child: Row(
                                               mainAxisAlignment:
@@ -490,7 +504,7 @@ class TransactionForm extends StatelessWidget {
                                                         ),
                                                     style: Theme.of(
                                                       context,
-                                                    ).textTheme.titleMedium,
+                                                    ).textTheme.bodyLarge,
                                                   ),
                                                 ),
                                                 const Icon(
@@ -632,6 +646,12 @@ class TransactionForm extends StatelessWidget {
                                                     context,
                                                   )!.account,
                                                 ),
+                                                labelStyle: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).hintColor,
+                                                ),
                                               ),
                                               child: Row(
                                                 mainAxisAlignment:
@@ -653,9 +673,11 @@ class TransactionForm extends StatelessWidget {
                                                           ),
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .titleLarge
+                                                          .bodyLarge
                                                           ?.copyWith(
-                                                            fontSize: 24,
+                                                            fontSize: 18,
+                                                            fontWeight:
+                                                                FontWeight.w600,
                                                           ),
                                                     ),
                                                   ),
@@ -729,9 +751,10 @@ class TransactionForm extends StatelessWidget {
                                   ),
                                   child: CalculatedField(
                                     currency: profile.currency,
-                                    textStyle: Theme.of(
-                                      context,
-                                    ).textTheme.titleLarge,
+                                    textStyle: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(fontSize: 20),
                                     onChanged: (value) {
                                       viewmodel.amount =
                                           value?.toIntCurrency() ?? 0;

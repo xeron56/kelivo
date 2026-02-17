@@ -17,6 +17,7 @@ class TheDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -31,7 +32,7 @@ class TheDrawer extends StatelessWidget {
                       children: [
                         const Expanded(child: TheDivider()),
                         Text(
-                          AppLocalizations.of(context)!.profile,
+                          loc?.profile ?? 'Profile',
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const Expanded(child: TheDivider()),
@@ -77,9 +78,10 @@ class TheDrawer extends StatelessWidget {
                                 horizontal: 12,
                               ),
                               child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.cashAccounts(viewmodel.cashCountinProfile),
+                                loc?.cashAccounts(
+                                      viewmodel.cashCountinProfile,
+                                    ) ??
+                                    'Cash Accounts: ${viewmodel.cashCountinProfile}',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ),
@@ -89,9 +91,10 @@ class TheDrawer extends StatelessWidget {
                                 horizontal: 12,
                               ),
                               child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.bankAccounts(viewmodel.bankCountinProfile),
+                                loc?.bankAccounts(
+                                      viewmodel.bankCountinProfile,
+                                    ) ??
+                                    'Bank Accounts: ${viewmodel.bankCountinProfile}',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ),
@@ -100,7 +103,7 @@ class TheDrawer extends StatelessWidget {
                         children: [
                           ListTile(
                             title: Text(
-                              AppLocalizations.of(context)!.editThisProfile,
+                              loc?.editThisProfile ?? 'Edit This Profile',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             onTap: () {
@@ -121,7 +124,7 @@ class TheDrawer extends StatelessWidget {
                           ),
                           ListTile(
                             title: Text(
-                              AppLocalizations.of(context)!.newProfile,
+                              loc?.newProfile ?? 'New Profile',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             onTap: () {
@@ -141,7 +144,7 @@ class TheDrawer extends StatelessWidget {
                           ),
                           ListTile(
                             title: Text(
-                              AppLocalizations.of(context)!.allProfiles,
+                              loc?.allProfiles ?? 'All Profiles',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             onTap: () {
@@ -149,9 +152,7 @@ class TheDrawer extends StatelessWidget {
                               showDialog(
                                 context: context,
                                 builder: (context) => SimpleDialog(
-                                  title: Text(
-                                    AppLocalizations.of(context)!.myProfiles,
-                                  ),
+                                  title: Text(loc?.myProfiles ?? 'My Profiles'),
                                   children: [
                                     ...viewmodel.profiles.map(
                                       (p) => ListTile(
@@ -216,7 +217,10 @@ class TheDrawer extends StatelessWidget {
                 return Material(
                   color: Colors.transparent,
                   child: ListTile(
-                    title: Text(AppLocalizations.of(context)!.toggleTheme),
+                    title: Text(
+                      AppLocalizations.of(context)?.toggleTheme ??
+                          'Toggle Theme',
+                    ),
                     onTap: () async {
                       await AdaptiveTheme.getThemeMode() ==
                               AdaptiveThemeMode.light
@@ -247,7 +251,7 @@ class TheDrawer extends StatelessWidget {
             Material(
               color: Colors.transparent,
               child: ListTile(
-                title: Text(AppLocalizations.of(context)!.settings),
+                title: Text(loc?.settings ?? 'Settings'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -263,7 +267,7 @@ class TheDrawer extends StatelessWidget {
             Material(
               color: Colors.transparent,
               child: ListTile(
-                title: Text(AppLocalizations.of(context)!.aboutUs),
+                title: Text(loc?.aboutUs ?? 'About Us'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -303,7 +307,7 @@ class TheDrawer extends StatelessWidget {
                       throw Exception('Could not launch $url');
                     }
                   },
-                  child: Text(AppLocalizations.of(context)!.supportUs),
+                  child: Text(loc?.supportUs ?? 'Support Us'),
                 ),
               ],
             ),

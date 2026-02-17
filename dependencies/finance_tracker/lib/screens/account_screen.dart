@@ -31,14 +31,15 @@ import 'package:finance_tracker/widgets/shared/transactions_list.dart';
 import 'package:finance_tracker/widgets/shared/transactions_list_wide.dart';
 
 class AccountScreen extends StatelessWidget {
-  const AccountScreen(
-      {super.key,
-      required this.profile,
-      required this.account,
-      this.wallet,
-      this.bank,
-      this.cCard,
-      this.loan});
+  const AccountScreen({
+    super.key,
+    required this.profile,
+    required this.account,
+    this.wallet,
+    this.bank,
+    this.cCard,
+    this.loan,
+  });
   final Profile profile;
   final Account account;
   final Wallet? wallet;
@@ -48,19 +49,26 @@ class AccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final balancesDriftRepository =
-        Provider.of<BalancesDriftRepository>(context, listen: false);
-    final accountsDriftRepository =
-        Provider.of<AccountsDriftRepository>(context, listen: false);
+    final balancesDriftRepository = Provider.of<BalancesDriftRepository>(
+      context,
+      listen: false,
+    );
+    final accountsDriftRepository = Provider.of<AccountsDriftRepository>(
+      context,
+      listen: false,
+    );
     final transactionsDriftRepository =
         Provider.of<TransactionsDriftRepository>(context, listen: false);
 
     final appViewmodel = Provider.of<AppViewmodel>(context);
     return ChangeNotifierProvider<AccountViewmodel>(
-      create: (context) => AccountViewmodel(transactionsDriftRepository,
-          balancesDriftRepository, accountsDriftRepository,
-          profile: profile, account: account)
-        ..init(),
+      create: (context) => AccountViewmodel(
+        transactionsDriftRepository,
+        balancesDriftRepository,
+        accountsDriftRepository,
+        profile: profile,
+        account: account,
+      )..init(),
       builder: (context, child) => Consumer<AccountViewmodel>(
         builder: (context, viewmodel, child) => Scaffold(
           appBar: AppBar(
@@ -68,45 +76,48 @@ class AccountScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(2.0),
                 child: IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AccountEntryScreen(
-                              profile: profile,
-                              account: account,
-                            ),
-                          )).then((_) {
-                        viewmodel.init();
-                      });
-                    },
-                    icon: const Icon(Icons.edit)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AccountEntryScreen(
+                          profile: profile,
+                          account: account,
+                        ),
+                      ),
+                    ).then((_) {
+                      viewmodel.init();
+                    });
+                  },
+                  icon: const Icon(Icons.edit),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.all(2.0),
                 child: IconButton(
-                    onPressed: () async {
-                      await showDialog(
-                        context: context,
-                        builder: (context) => TransactionOptionsDialog(
-                          currency: profile.currency,
-                          ledgers: viewmodel.allLedgers,
-                          profile: profile,
-                          vType: account.accountType == 5
-                              ? VoucherType.payment
-                              : VoucherType.receipt,
-                          oAcc: account,
-                          reloadFn: () async {
-                            await viewmodel.init();
-                          },
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.add)),
+                  onPressed: () async {
+                    await showDialog(
+                      context: context,
+                      useRootNavigator: false,
+                      builder: (context) => TransactionOptionsDialog(
+                        currency: profile.currency,
+                        ledgers: viewmodel.allLedgers,
+                        profile: profile,
+                        appViewmodel: appViewmodel,
+                        vType: account.accountType == 5
+                            ? VoucherType.payment
+                            : VoucherType.receipt,
+                        oAcc: account,
+                        reloadFn: () async {
+                          await viewmodel.init();
+                        },
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                ),
               ),
-              const SizedBox(
-                width: 12,
-              ),
+              const SizedBox(width: 12),
             ],
           ),
           body: LoadingBody(
@@ -115,13 +126,14 @@ class AccountScreen extends StatelessWidget {
             resetErrorTextFn: () {
               viewmodel.resetErrorText();
             },
-            widget: LayoutBuilder(builder: (context, constraints) {
-              bool isWide = constraints.maxWidth > 800;
+            widget: LayoutBuilder(
+              builder: (context, constraints) {
+                bool isWide = constraints.maxWidth > 800;
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Visibility(
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Visibility(
                       visible: isWide,
                       child: SizedBox(
                         width: 300,
@@ -131,29 +143,30 @@ class AccountScreen extends StatelessWidget {
                             spacing: 5,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: createFilterMenu(
-                                viewmodel,
-                                context,
-                                appViewmodel.dateFormat.pattern ??
-                                    AppDateFormat.date1.pattern),
+                              viewmodel,
+                              context,
+                              appViewmodel.dateFormat.pattern ??
+                                  AppDateFormat.date1.pattern,
+                            ),
                           ),
                         ),
-                      )),
-                  Visibility(
-                      visible: isWide,
-                      child: const VerticalDivider(
-                        thickness: .10,
-                        width: .10,
-                      )),
-                  Expanded(
-                    child: TransactionsSection(
-                      viewmodel: viewmodel,
-                      isWide: isWide,
-                      constraints: constraints,
+                      ),
                     ),
-                  ),
-                ],
-              );
-            }),
+                    Visibility(
+                      visible: isWide,
+                      child: const VerticalDivider(thickness: .10, width: .10),
+                    ),
+                    Expanded(
+                      child: TransactionsSection(
+                        viewmodel: viewmodel,
+                        isWide: isWide,
+                        constraints: constraints,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
           endDrawer: Drawer(
             shape: const RoundedRectangleBorder(),
@@ -164,10 +177,11 @@ class AccountScreen extends StatelessWidget {
                 child: ListView(
                   shrinkWrap: true,
                   children: createFilterMenu(
-                      viewmodel,
-                      context,
-                      appViewmodel.dateFormat.pattern ??
-                          AppDateFormat.date1.pattern),
+                    viewmodel,
+                    context,
+                    appViewmodel.dateFormat.pattern ??
+                        AppDateFormat.date1.pattern,
+                  ),
                 ),
               ),
             ),
@@ -179,7 +193,10 @@ class AccountScreen extends StatelessWidget {
 }
 
 List<Widget> createFilterMenu(
-    AccountViewmodel viewmodel, BuildContext context, String datePattern) {
+  AccountViewmodel viewmodel,
+  BuildContext context,
+  String datePattern,
+) {
   return [
     Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -201,33 +218,33 @@ List<Widget> createFilterMenu(
       ),
     ),
     Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-          child: TheDatePicker(
-            initialDate: viewmodel.startDate,
-            onChanged: (d) {
-              viewmodel.addToFilter(sDate: d);
-            },
-            label: AppLocalizations.of(context)!.startDate,
-            needTime: false,
-            datePattern: datePattern,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-          child: TheDatePicker(
-            initialDate: viewmodel.endDate,
-            onChanged: (d) {
-              viewmodel.addToFilter(eDate: d);
-            },
-            label: AppLocalizations.of(context)!.endDate,
-            needTime: false,
-            datePattern: datePattern,
-          ),
-        ),
-      ],
-    )
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+              child: TheDatePicker(
+                initialDate: viewmodel.startDate,
+                onChanged: (d) {
+                  viewmodel.addToFilter(sDate: d);
+                },
+                label: AppLocalizations.of(context)!.startDate,
+                needTime: false,
+                datePattern: datePattern,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+              child: TheDatePicker(
+                initialDate: viewmodel.endDate,
+                onChanged: (d) {
+                  viewmodel.addToFilter(eDate: d);
+                },
+                label: AppLocalizations.of(context)!.endDate,
+                needTime: false,
+                datePattern: datePattern,
+              ),
+            ),
+          ],
+        )
         .animate()
         .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
         .fade(curve: Curves.easeInOut, duration: 100.ms),
@@ -247,17 +264,20 @@ List<Widget> createFilterMenu(
       ),
     ),
     Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        ...viewmodel.voucherTypes.toList().map((v) => FilterChip(
-            selected: !viewmodel.voucherTypeFilters.contains(v),
-            label: Text(v.label),
-            onSelected: (s) {
-              viewmodel.addToFilter(voucherType: v);
-            }))
-      ],
-    )
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            ...viewmodel.voucherTypes.toList().map(
+              (v) => FilterChip(
+                selected: !viewmodel.voucherTypeFilters.contains(v),
+                label: Text(v.label),
+                onSelected: (s) {
+                  viewmodel.addToFilter(voucherType: v);
+                },
+              ),
+            ),
+          ],
+        )
         .animate(delay: 50.ms)
         .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
         .fade(curve: Curves.easeInOut, duration: 100.ms),
@@ -277,17 +297,20 @@ List<Widget> createFilterMenu(
       ),
     ),
     Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        ...viewmodel.otherAccounts.toList().map((v) => FilterChip(
-            selected: !viewmodel.otherAccountFilters.contains(v.dbID),
-            label: Text(v.name),
-            onSelected: (s) {
-              viewmodel.addToFilter(oAcc: v);
-            }))
-      ],
-    )
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            ...viewmodel.otherAccounts.toList().map(
+              (v) => FilterChip(
+                selected: !viewmodel.otherAccountFilters.contains(v.dbID),
+                label: Text(v.name),
+                onSelected: (s) {
+                  viewmodel.addToFilter(oAcc: v);
+                },
+              ),
+            ),
+          ],
+        )
         .animate(delay: 100.ms)
         .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
         .fade(curve: Curves.easeInOut, duration: 100.ms),
@@ -312,7 +335,8 @@ class TransactionsSection extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-            maxWidth: appViewmodel.isPhone ? smallWidth : double.maxFinite),
+          maxWidth: appViewmodel.isPhone ? smallWidth : double.maxFinite,
+        ),
         child: Column(
           children: [
             AnimatedContainer(
@@ -332,15 +356,12 @@ class TransactionsSection extends StatelessWidget {
                               viewmodel.account.name,
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
-                            const SizedBox(
-                              width: 10,
-                            ),
+                            const SizedBox(width: 10),
                             Icon(
                               getAccTypeIcon(viewmodel.account.accountType),
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.color,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.headlineMedium?.color,
                             ),
                           ],
                         ),
@@ -354,22 +375,23 @@ class TransactionsSection extends StatelessWidget {
                               await viewmodel.exportXLSX();
                             },
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 2,
+                    ),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
                         child: Text(
                           AppLocalizations.of(context)!.fromToDate(
-                              appViewmodel.dateFormat
-                                  .format(viewmodel.startDate),
-                              appViewmodel.dateFormat
-                                  .format(viewmodel.endDate)),
+                            appViewmodel.dateFormat.format(viewmodel.startDate),
+                            appViewmodel.dateFormat.format(viewmodel.endDate),
+                          ),
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                         onTap: () {
@@ -383,9 +405,11 @@ class TransactionsSection extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: SearchField(searchFn: (term) {
-                          viewmodel.searchTerm = term;
-                        }),
+                        child: SearchField(
+                          searchFn: (term) {
+                            viewmodel.searchTerm = term;
+                          },
+                        ),
                       ),
                       Visibility(
                         visible: !isWide,
@@ -418,44 +442,49 @@ class TransactionsSection extends StatelessWidget {
               visible: viewmodel.fTransactions.isEmpty,
               child: Expanded(
                 child: EmptyList(
-                    items: AppLocalizations.of(context)!.transactions,
-                    addFn: () async {
-                      await showDialog(
-                        context: context,
-                        builder: (context) => TransactionOptionsDialog(
-                          currency: viewmodel.profile.currency,
-                          ledgers: viewmodel.allLedgers,
-                          profile: viewmodel.profile,
-                          vType: viewmodel.account.accountType == 5
-                              ? VoucherType.payment
-                              : VoucherType.receipt,
-                          oAcc: viewmodel.account,
-                          reloadFn: () async {
-                            await viewmodel.init();
-                          },
-                        ),
-                      );
-                    },
-                    isListFiltered: true),
+                  items: AppLocalizations.of(context)!.transactions,
+                  addFn: () async {
+                    await showDialog(
+                      context: context,
+                      useRootNavigator: false,
+                      builder: (context) => TransactionOptionsDialog(
+                        currency: viewmodel.profile.currency,
+                        ledgers: viewmodel.allLedgers,
+                        profile: viewmodel.profile,
+                        appViewmodel: appViewmodel,
+                        vType: viewmodel.account.accountType == 5
+                            ? VoucherType.payment
+                            : VoucherType.receipt,
+                        oAcc: viewmodel.account,
+                        reloadFn: () async {
+                          await viewmodel.init();
+                        },
+                      ),
+                    );
+                  },
+                  isListFiltered: true,
+                ),
               ),
             ),
             Visibility(
               visible: viewmodel.fTransactions.isNotEmpty,
               child: Expanded(
-                child: Builder(builder: (_) {
-                  if (viewmodel.searchLoadingStatus ==
-                      LoadingStatus.completed) {
-                    if (!appViewmodel.isPhone) {
-                      return TransactionsListWide(
+                child: Builder(
+                  builder: (_) {
+                    if (viewmodel.searchLoadingStatus ==
+                        LoadingStatus.completed) {
+                      if (!appViewmodel.isPhone) {
+                        return TransactionsListWide(
                           scrollController: viewmodel.scrollController,
                           fTransactions: viewmodel.fTransactions,
                           profile: viewmodel.profile,
                           account: viewmodel.account,
                           initFn: () {
                             viewmodel.init();
-                          });
-                    }
-                    return TransactionsList(
+                          },
+                        );
+                      }
+                      return TransactionsList(
                         scrollController: viewmodel.scrollController,
                         fDates: viewmodel.fDates,
                         fTransactions: viewmodel.fTransactions,
@@ -463,21 +492,24 @@ class TransactionsSection extends StatelessWidget {
                         account: viewmodel.account,
                         initFn: () {
                           viewmodel.init();
-                        });
-                  } else {
-                    return const Expanded(
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
-                }),
+                        },
+                      );
+                    } else {
+                      return const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                  },
+                ),
               ),
             ),
             ListTile(
               shape: Border(
-                  top: BorderSide(
-                      color: Theme.of(context).shadowColor, width: 0.10)),
+                top: BorderSide(
+                  color: Theme.of(context).shadowColor,
+                  width: 0.10,
+                ),
+              ),
               title: Text(
                 AppLocalizations.of(context)!.closingBalance,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -493,5 +525,3 @@ class TransactionsSection extends StatelessWidget {
     );
   }
 }
-
-

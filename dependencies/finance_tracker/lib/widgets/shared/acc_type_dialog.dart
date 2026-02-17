@@ -26,19 +26,27 @@ class AccountTypeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SimpleDialog(
-      title: Text(AppLocalizations.of(context)!
-          .select(AppLocalizations.of(context)!.accountType)),
+      title: Builder(
+        builder: (context) {
+          final loc = AppLocalizations.of(context);
+          final accType = loc?.accountType ?? "Account Type";
+          return Text(loc?.select(accType) ?? "Select $accType");
+        },
+      ),
       children: [
         ...accountTypes.map(
           (a) => ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            title: Text(a.name,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium
-                    ?.copyWith(fontSize: 24)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            title: Text(
+              a.name,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontSize: 24),
+            ),
             minTileHeight: 50,
             minLeadingWidth: 28,
             leading: Icon(getAccTypeIcon(a.dbID)),
@@ -47,10 +55,8 @@ class AccountTypeDialog extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AccountEntryScreen(
-                    profile: profile,
-                    accountType: a,
-                  ),
+                  builder: (context) =>
+                      AccountEntryScreen(profile: profile, accountType: a),
                 ),
               ).then((_) {
                 initFn();
@@ -58,12 +64,8 @@ class AccountTypeDialog extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(
-          height: 12,
-        ),
+        const SizedBox(height: 12),
       ],
     );
   }
 }
-
-

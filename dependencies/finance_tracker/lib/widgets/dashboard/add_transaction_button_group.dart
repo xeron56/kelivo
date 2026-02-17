@@ -41,10 +41,12 @@ class AddTransactionButtonGroup extends StatelessWidget {
                 onTap: () async {
                   await showDialog(
                     context: context,
+                    useRootNavigator: false,
                     builder: (context) => TransactionOptionsDialog(
                       currency: profile.currency,
                       ledgers: viewmodel.allLedgers,
                       profile: profile,
+                      appViewmodel: appViewmodel,
                       vType: VoucherType.receipt,
                       reloadFn: () async {
                         await viewmodel.init();
@@ -63,7 +65,7 @@ class AddTransactionButtonGroup extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      AppLocalizations.of(context)!.receipt,
+                      AppLocalizations.of(context)?.receipt ?? 'Receipt',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 16,
                         color: Colors.white,
@@ -84,10 +86,12 @@ class AddTransactionButtonGroup extends StatelessWidget {
                 onTap: () async {
                   await showDialog(
                     context: context,
+                    useRootNavigator: false,
                     builder: (context) => TransactionOptionsDialog(
                       currency: profile.currency,
                       ledgers: viewmodel.allLedgers,
                       profile: profile,
+                      appViewmodel: appViewmodel,
                       vType: VoucherType.payment,
                       reloadFn: () async {
                         await viewmodel.init();
@@ -106,7 +110,7 @@ class AddTransactionButtonGroup extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      AppLocalizations.of(context)!.payment,
+                      AppLocalizations.of(context)?.payment ?? 'Payment',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 16,
                         color: Colors.white,

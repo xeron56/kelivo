@@ -9,14 +9,20 @@ import 'package:finance_tracker/core/models/domain/profile.dart';
 import 'package:finance_tracker/utils/services/notification_service.dart';
 import 'package:finance_tracker/core/enums/loading_status.dart';
 import 'package:finance_tracker/core/abstracts/profiles_repository.dart';
+import 'package:finance_tracker/core/abstracts/accounts_repository.dart';
 import 'package:finance_tracker/utils/app_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppViewmodel extends ChangeNotifier {
   final ProfilesRepository _profilesRepository;
   final DatabaseRepository _databaseRepository;
+  final AccountsRepository _accountsRepository;
 
-  AppViewmodel(this._profilesRepository, this._databaseRepository);
+  AppViewmodel(
+    this._profilesRepository,
+    this._databaseRepository,
+    this._accountsRepository,
+  );
 
   Profile? _selectedProfile;
 
@@ -41,7 +47,11 @@ class AppViewmodel extends ChangeNotifier {
   bool reminderStatus = false;
   String reminderTime = "";
   String paymentReminderTime = "";
+
   TimeOfDay paymentReminderTimeStamp = const TimeOfDay(hour: 8, minute: 0);
+
+  int cashCountinProfile = 0;
+  int bankCountinProfile = 0;
 
   DateFormat dateFormat = DateFormat(AppDateFormat.date1.pattern);
 
@@ -86,9 +96,11 @@ class AppViewmodel extends ChangeNotifier {
         await setPaymentReminderTime(paymentReminderTimeStamp);
       }
 
-      dateFormat =
-          DateFormat(await getAppDateFormat() ?? AppDateFormat.date1.pattern);
+      dateFormat = DateFormat(
+        await getAppDateFormat() ?? AppDateFormat.date1.pattern,
+      );
       await _resetTransactionsFilterStartDate();
+      await _getAccCounts();
       notifyListeners();
     } catch (e, stackTrace) {
       AppLogger.instance.error(' ${e.toString()}', [stackTrace]);
@@ -103,6 +115,7 @@ class AppViewmodel extends ChangeNotifier {
 
     if (value != null) {
       _profilesRepository.setSelectedProfile(value.dbID);
+      _getAccCounts();
     }
     notifyListeners();
   }
@@ -211,8 +224,13 @@ class AppViewmodel extends ChangeNotifier {
       final dt = DateTime(0, 0, 0, time.hour, time.minute);
       reminderTime = timeFormat.format(dt);
       if (reminderStatus) {
-        NotificationService.scheduleDailyReminder(0, "Pursenal",
-            "Click to add today's transactions", time, '/profiles');
+        NotificationService.scheduleDailyReminder(
+          0,
+          "Pursenal",
+          "Click to add today's transactions",
+          time,
+          '/profiles',
+        );
       }
     } catch (e) {
       AppLogger.instance.error(' ${e.toString()}');
@@ -284,12 +302,11 @@ class AppViewmodel extends ChangeNotifier {
 
   Future<void> _resetTransactionsFilterStartDate() async {
     try {
-      await _prefs?.remove(
-        'filterStartDate',
-      );
+      await _prefs?.remove('filterStartDate');
     } catch (e) {
-      AppLogger.instance
-          .error("Error setting Last updated timestamp ${e.toString()}");
+      AppLogger.instance.error(
+        "Error setting Last updated timestamp ${e.toString()}",
+      );
     }
   }
 
@@ -312,5 +329,21 @@ class AppViewmodel extends ChangeNotifier {
       return "Error imrporting database";
     }
   }
-}
 
+  Future<void> _getAccCounts() async {
+    if (_selectedProfile == null) return;
+    try {
+      cashCountinProfile = (await _accountsRepository.getAccountsByAccType(
+        _selectedProfile!.dbID,
+        0,
+      )).length;
+      bankCountinProfile = (await _accountsRepository.getAccountsByAccType(
+        _selectedProfile!.dbID,
+        1,
+      )).length;
+    } catch (e) {
+      AppLogger.instance.error('Error fetching account counts: $e');
+    }
+    notifyListeners();
+  }
+}

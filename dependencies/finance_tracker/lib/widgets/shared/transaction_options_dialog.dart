@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+
 import 'package:finance_tracker/app/global/dimensions.dart';
 import 'package:finance_tracker/app/global/values.dart';
 import 'package:finance_tracker/app/extensions/currency.dart';
@@ -15,15 +15,17 @@ import 'package:finance_tracker/widgets/shared/search_field.dart';
 
 class TransactionOptionsDialog extends StatefulWidget {
   /// Dialog with options that will prefill the transaction entry screen
-  const TransactionOptionsDialog(
-      {super.key,
-      required this.ledgers,
-      required this.profile,
-      required this.reloadFn,
-      this.vType,
-      this.fAcc,
-      this.oAcc,
-      required this.currency});
+  const TransactionOptionsDialog({
+    super.key,
+    required this.ledgers,
+    required this.profile,
+    required this.reloadFn,
+    required this.appViewmodel,
+    this.vType,
+    this.fAcc,
+    this.oAcc,
+    required this.currency,
+  });
 
   /// List of ledgers passed to select the fund and account
   final List<Ledger> ledgers;
@@ -45,6 +47,8 @@ class TransactionOptionsDialog extends StatefulWidget {
 
   /// Currency from profile
   final Currency currency;
+
+  final AppViewmodel appViewmodel;
 
   @override
   State<TransactionOptionsDialog> createState() =>
@@ -71,9 +75,11 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
     selectedAccount = widget.oAcc;
 
     funds = widget.ledgers
-        .where((a) =>
-            fundIDs.contains(a.accountType.dbID) ||
-            cCardTypeID == a.accountType.dbID)
+        .where(
+          (a) =>
+              fundIDs.contains(a.accountType.dbID) ||
+              cCardTypeID == a.accountType.dbID,
+        )
         .toList();
     if (voucherType != null) {
       pageNo = 1;
@@ -86,11 +92,12 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final appViewmodel = Provider.of<AppViewmodel>(context);
+    final appViewmodel = widget.appViewmodel;
+    final loc = AppLocalizations.of(context);
     List<String> titles = [
-      AppLocalizations.of(context)!.transactionType,
-      AppLocalizations.of(context)!.fundForTransaction,
-      AppLocalizations.of(context)!.accountForTransaction
+      loc?.transactionType ?? "Transaction Type",
+      loc?.fundForTransaction ?? "Fund",
+      loc?.accountForTransaction ?? "Account",
     ];
     return AlertDialog(
       titlePadding: const EdgeInsets.all(0),
@@ -98,26 +105,39 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 0.0),
-            child: Text(AppLocalizations.of(context)!.select(titles[pageNo]),
-                style: Theme.of(context).textTheme.titleLarge),
+            child: Builder(
+              builder: (context) {
+                final loc = AppLocalizations.of(context);
+                if (loc == null) return const Text("");
+                final title = pageNo < titles.length
+                    ? titles[pageNo]
+                    : "Select";
+                return Text(
+                  loc.select(title),
+                  style: Theme.of(context).textTheme.titleLarge,
+                );
+              },
+            ),
           ),
-          const SizedBox(
-            height: 24,
-          ),
+          const SizedBox(height: 24),
           Visibility(
             visible: pageNo == 2,
             child: SizedBox(
-                width: smallWidth,
-                child: SearchField(searchFn: (f) {
+              width: smallWidth,
+              child: SearchField(
+                searchFn: (f) {
                   setState(() {
                     fOtherAccounts = otherAccounts
-                        .where((a) => a
-                            .toString()
-                            .toLowerCase()
-                            .contains(f.toLowerCase()))
+                        .where(
+                          (a) => a.toString().toLowerCase().contains(
+                            f.toLowerCase(),
+                          ),
+                        )
                         .toList();
                   });
-                })),
+                },
+              ),
+            ),
           ),
         ],
       ),
@@ -128,11 +148,12 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
       contentPadding: const EdgeInsets.only(top: 2, bottom: 6),
       actions: [
         TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              goToTransactionEditScreen();
-            },
-            child: Text(AppLocalizations.of(context)!.skip))
+          onPressed: () {
+            Navigator.pop(context);
+            goToTransactionEditScreen();
+          },
+          child: Text(AppLocalizations.of(context)?.skip ?? 'Skip'),
+        ),
       ],
     );
   }
@@ -148,16 +169,20 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
             return ListTile(
               minTileHeight: 80,
               shape: Border(
-                  bottom: BorderSide(
-                      color: Theme.of(context).shadowColor, width: 0.10)),
+                bottom: BorderSide(
+                  color: Theme.of(context).shadowColor,
+                  width: 0.10,
+                ),
+              ),
               title: Padding(
                 padding: const EdgeInsets.only(left: 20),
                 child: Text(
                   vType.label,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: vType == VoucherType.payment
-                          ? paymentColor
-                          : receiptColor),
+                    color: vType == VoucherType.payment
+                        ? paymentColor
+                        : receiptColor,
+                  ),
                 ),
               ),
               onTap: () {
@@ -178,8 +203,11 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
           itemCount: funds.length,
           itemBuilder: (context, index) => ListTile(
             shape: Border(
-                bottom: BorderSide(
-                    color: Theme.of(context).shadowColor, width: 0.10)),
+              bottom: BorderSide(
+                color: Theme.of(context).shadowColor,
+                width: 0.10,
+              ),
+            ),
             title: Text(
               funds[index].account.name,
               style: Theme.of(context).textTheme.titleMedium,
@@ -213,8 +241,11 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
               minVerticalPadding: 2,
               minTileHeight: 10,
               shape: Border(
-                  bottom: BorderSide(
-                      color: Theme.of(context).shadowColor, width: 0.10)),
+                bottom: BorderSide(
+                  color: Theme.of(context).shadowColor,
+                  width: 0.10,
+                ),
+              ),
               title: Text(
                 fOtherAccounts[index].account.name,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -226,9 +257,9 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
                 overflow: TextOverflow.ellipsis,
               ),
               trailing: Text(
-                fOtherAccounts[index]
-                    .balance
-                    .toCurrencyStringWSymbol(widget.currency),
+                fOtherAccounts[index].balance.toCurrencyStringWSymbol(
+                  widget.currency,
+                ),
                 style: Theme.of(context).textTheme.bodyMedium,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -287,18 +318,17 @@ class _TransactionOptionsDialogState extends State<TransactionOptionsDialog> {
 
   goToTransactionEditScreen() {
     Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TransactionEntryScreen(
-            profile: widget.profile,
-            selectedAccount: selectedAccount,
-            selectedFund: selectedFund,
-            voucherType: voucherType,
-          ),
-        )).then((_) async {
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionEntryScreen(
+          profile: widget.profile,
+          selectedAccount: selectedAccount,
+          selectedFund: selectedFund,
+          voucherType: voucherType,
+        ),
+      ),
+    ).then((_) async {
       await widget.reloadFn();
     });
   }
 }
-
-

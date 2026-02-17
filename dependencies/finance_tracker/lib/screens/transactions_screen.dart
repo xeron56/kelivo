@@ -28,15 +28,18 @@ class TransactionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final transactionsDriftRepository =
         Provider.of<TransactionsDriftRepository>(context, listen: false);
-    final accountsDriftRepository =
-        Provider.of<AccountsDriftRepository>(context, listen: false);
+    final accountsDriftRepository = Provider.of<AccountsDriftRepository>(
+      context,
+      listen: false,
+    );
 
     final appViewmodel = Provider.of<AppViewmodel>(context);
     return ChangeNotifierProvider<TransactionsViewmodel>(
       create: (context) => TransactionsViewmodel(
-          transactionsDriftRepository, accountsDriftRepository,
-          profile: profile)
-        ..init(),
+        transactionsDriftRepository,
+        accountsDriftRepository,
+        profile: profile,
+      )..init(),
       builder: (context, child) => Consumer<TransactionsViewmodel>(
         builder: (context, viewmodel, child) => Scaffold(
           body: LoadingBody(
@@ -46,50 +49,49 @@ class TransactionsScreen extends StatelessWidget {
             resetErrorTextFn: () {
               viewmodel.resetErrorText();
             },
-            widget: LayoutBuilder(builder: (context, constraints) {
-              bool isWide = constraints.maxWidth > 800;
+            widget: LayoutBuilder(
+              builder: (context, constraints) {
+                bool isWide = constraints.maxWidth > 800;
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Visibility(
-                    visible: isWide,
-                    child: SizedBox(
-                      width: 300,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            spacing: 5,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: createFilterMenu(
-                              viewmodel,
-                              context,
-                              appViewmodel.dateFormat.pattern ??
-                                  AppDateFormat.date1.pattern,
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Visibility(
+                      visible: isWide,
+                      child: SizedBox(
+                        width: 300,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              spacing: 5,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: createFilterMenu(
+                                viewmodel,
+                                context,
+                                appViewmodel.dateFormat.pattern ??
+                                    AppDateFormat.date1.pattern,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Visibility(
-                    visible: isWide,
-                    child: const VerticalDivider(
-                      thickness: .10,
-                      width: .10,
+                    Visibility(
+                      visible: isWide,
+                      child: const VerticalDivider(thickness: .10, width: .10),
                     ),
-                  ),
-                  Expanded(
-                    child: TransactionsSection(
-                      viewmodel: viewmodel,
-                      isWide: isWide,
-                      constraints: constraints,
+                    Expanded(
+                      child: TransactionsSection(
+                        viewmodel: viewmodel,
+                        isWide: isWide,
+                        constraints: constraints,
+                      ),
                     ),
-                  ),
-                ],
-              );
-            }),
+                  ],
+                );
+              },
+            ),
           ),
           endDrawer: Drawer(
             shape: const RoundedRectangleBorder(),
@@ -111,14 +113,17 @@ class TransactionsScreen extends StatelessWidget {
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              final vm =
-                  Provider.of<TransactionsViewmodel>(context, listen: false);
+              final vm = Provider.of<TransactionsViewmodel>(
+                context,
+                listen: false,
+              );
               showDialog(
                 context: context,
                 builder: (_) => TransactionOptionsDialog(
                   currency: profile.currency,
                   ledgers: viewmodel.allLedgers,
                   profile: profile,
+                  appViewmodel: appViewmodel,
                   reloadFn: () {
                     vm.init();
                   },
@@ -160,33 +165,33 @@ List<Widget> createFilterMenu(
       ),
     ),
     Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: TheDatePicker(
-            initialDate: viewmodel.startDate,
-            onChanged: (d) {
-              viewmodel.addToFilter(sDate: d);
-            },
-            label: AppLocalizations.of(context)!.startDate,
-            needTime: false,
-            datePattern: datePattern,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: TheDatePicker(
-            initialDate: viewmodel.endDate,
-            onChanged: (d) {
-              viewmodel.addToFilter(eDate: d);
-            },
-            label: AppLocalizations.of(context)!.endDate,
-            needTime: false,
-            datePattern: datePattern,
-          ),
-        ),
-      ],
-    )
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: TheDatePicker(
+                initialDate: viewmodel.startDate,
+                onChanged: (d) {
+                  viewmodel.addToFilter(sDate: d);
+                },
+                label: AppLocalizations.of(context)!.startDate,
+                needTime: false,
+                datePattern: datePattern,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: TheDatePicker(
+                initialDate: viewmodel.endDate,
+                onChanged: (d) {
+                  viewmodel.addToFilter(eDate: d);
+                },
+                label: AppLocalizations.of(context)!.endDate,
+                needTime: false,
+                datePattern: datePattern,
+              ),
+            ),
+          ],
+        )
         .animate()
         .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
         .fade(curve: Curves.easeInOut, duration: 100.ms),
@@ -206,17 +211,20 @@ List<Widget> createFilterMenu(
       ),
     ),
     Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        ...viewmodel.voucherTypes.toList().map((v) => FilterChip(
-            selected: !viewmodel.voucherTypeFilters.contains(v),
-            label: Text(v.label),
-            onSelected: (s) {
-              viewmodel.addToFilter(voucherType: v);
-            }))
-      ],
-    )
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            ...viewmodel.voucherTypes.toList().map(
+              (v) => FilterChip(
+                selected: !viewmodel.voucherTypeFilters.contains(v),
+                label: Text(v.label),
+                onSelected: (s) {
+                  viewmodel.addToFilter(voucherType: v);
+                },
+              ),
+            ),
+          ],
+        )
         .animate(delay: 50.ms)
         .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
         .fade(curve: Curves.easeInOut, duration: 100.ms),
@@ -236,17 +244,20 @@ List<Widget> createFilterMenu(
       ),
     ),
     Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        ...viewmodel.fundCriterias.toList().map((v) => FilterChip(
-            selected: !viewmodel.fundFilters.contains(v.dbID),
-            label: Text(v.name),
-            onSelected: (s) {
-              viewmodel.addToFilter(fAcc: v);
-            })),
-      ],
-    )
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            ...viewmodel.fundCriterias.toList().map(
+              (v) => FilterChip(
+                selected: !viewmodel.fundFilters.contains(v.dbID),
+                label: Text(v.name),
+                onSelected: (s) {
+                  viewmodel.addToFilter(fAcc: v);
+                },
+              ),
+            ),
+          ],
+        )
         .animate(delay: 100.ms)
         .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
         .fade(curve: Curves.easeInOut, duration: 100.ms),
@@ -266,32 +277,34 @@ List<Widget> createFilterMenu(
       ),
     ),
     Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        ...viewmodel.otherAccounts.toList().map((v) => FilterChip(
-            selected: !viewmodel.otherAccountFilters.contains(v.dbID),
-            label: Text(v.name),
-            onSelected: (s) {
-              viewmodel.addToFilter(oAcc: v);
-            }))
-      ],
-    )
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            ...viewmodel.otherAccounts.toList().map(
+              (v) => FilterChip(
+                selected: !viewmodel.otherAccountFilters.contains(v.dbID),
+                label: Text(v.name),
+                onSelected: (s) {
+                  viewmodel.addToFilter(oAcc: v);
+                },
+              ),
+            ),
+          ],
+        )
         .animate(delay: 150.ms)
         .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
         .fade(curve: Curves.easeInOut, duration: 100.ms),
-    const SizedBox(
-      height: 40,
-    )
+    const SizedBox(height: 40),
   ];
 }
 
 class TransactionsSection extends StatelessWidget {
-  const TransactionsSection(
-      {super.key,
-      required this.viewmodel,
-      required this.isWide,
-      required this.constraints});
+  const TransactionsSection({
+    super.key,
+    required this.viewmodel,
+    required this.isWide,
+    required this.constraints,
+  });
 
   final TransactionsViewmodel viewmodel;
   final bool isWide;
@@ -303,136 +316,150 @@ class TransactionsSection extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-            maxWidth: appViewmodel.isPhone ? smallWidth : double.maxFinite),
+          maxWidth: appViewmodel.isPhone ? smallWidth : double.maxFinite,
+        ),
         child: Column(
           children: [
             AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: viewmodel.headerHeight,
-                curve: Curves.easeInOut,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context)!.myTransactions,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          ExportButton(
-                            pdfExportFn: () async {
-                              await viewmodel.exportPDF();
-                            },
-                            xlsxExportFn: () async {
-                              await viewmodel.exportXLSX();
-                            },
-                          )
-                        ],
-                      ),
+              duration: const Duration(milliseconds: 300),
+              height: viewmodel.headerHeight,
+              curve: Curves.easeInOut,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 2),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: GestureDetector(
-                          child: Text(
-                            AppLocalizations.of(context)!.fromToDate(
-                                appViewmodel.dateFormat
-                                    .format(viewmodel.startDate),
-                                appViewmodel.dateFormat
-                                    .format(viewmodel.endDate)),
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                          onTap: () {
-                            if (!isWide) {
-                              Scaffold.of(context).openEndDrawer();
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    Row(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: SearchField(
-                              initText: viewmodel.searchTerm,
-                              searchFn: (term) {
-                                viewmodel.searchTerm = term;
-                              }),
+                        Text(
+                          AppLocalizations.of(context)!.myTransactions,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
-                        Visibility(
-                          visible: !isWide,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: IconButton(
-                              onPressed: () {
-                                Scaffold.of(context).openEndDrawer();
-                              },
-                              icon: const Icon(Icons.filter_list),
-                            ),
-                          ),
+                        ExportButton(
+                          pdfExportFn: () async {
+                            await viewmodel.exportPDF();
+                          },
+                          xlsxExportFn: () async {
+                            await viewmodel.exportXLSX();
+                          },
                         ),
                       ],
                     ),
-                  ],
-                )),
-            Visibility(
-                visible: viewmodel.fTransactions.isEmpty,
-                child: Expanded(
-                  child: EmptyList(
-                      items: AppLocalizations.of(context)!.transactions,
-                      addFn: () {
-                        final vm = Provider.of<TransactionsViewmodel>(context,
-                            listen: false);
-                        showDialog(
-                          context: context,
-                          builder: (_) => TransactionOptionsDialog(
-                            currency: viewmodel.profile.currency,
-                            ledgers: viewmodel.allLedgers,
-                            profile: viewmodel.profile,
-                            reloadFn: () {
-                              vm.init();
-                            },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 2,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        child: Text(
+                          AppLocalizations.of(context)!.fromToDate(
+                            appViewmodel.dateFormat.format(viewmodel.startDate),
+                            appViewmodel.dateFormat.format(viewmodel.endDate),
                           ),
-                        );
-                      },
-                      isListFiltered: true),
-                )),
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        onTap: () {
+                          if (!isWide) {
+                            Scaffold.of(context).openEndDrawer();
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SearchField(
+                          initText: viewmodel.searchTerm,
+                          searchFn: (term) {
+                            viewmodel.searchTerm = term;
+                          },
+                        ),
+                      ),
+                      Visibility(
+                        visible: !isWide,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: IconButton(
+                            onPressed: () {
+                              Scaffold.of(context).openEndDrawer();
+                            },
+                            icon: const Icon(Icons.filter_list),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Visibility(
+              visible: viewmodel.fTransactions.isEmpty,
+              child: Expanded(
+                child: EmptyList(
+                  items: AppLocalizations.of(context)!.transactions,
+                  addFn: () {
+                    final vm = Provider.of<TransactionsViewmodel>(
+                      context,
+                      listen: false,
+                    );
+                    showDialog(
+                      context: context,
+                      useRootNavigator: false,
+                      builder: (_) => TransactionOptionsDialog(
+                        currency: viewmodel.profile.currency,
+                        ledgers: viewmodel.allLedgers,
+                        profile: viewmodel.profile,
+                        appViewmodel: appViewmodel,
+                        reloadFn: () {
+                          vm.init();
+                        },
+                      ),
+                    );
+                  },
+                  isListFiltered: true,
+                ),
+              ),
+            ),
             Visibility(
               visible: viewmodel.fTransactions.isNotEmpty,
               child: Expanded(
-                child: Builder(builder: (_) {
-                  if (viewmodel.searchLoadingStatus ==
-                      LoadingStatus.completed) {
-                    if (!appViewmodel.isPhone) {
-                      return TransactionsListWide(
+                child: Builder(
+                  builder: (_) {
+                    if (viewmodel.searchLoadingStatus ==
+                        LoadingStatus.completed) {
+                      if (!appViewmodel.isPhone) {
+                        return TransactionsListWide(
                           scrollController: viewmodel.scrollController,
                           fTransactions: viewmodel.fTransactions,
                           profile: viewmodel.profile,
                           initFn: () {
                             viewmodel.init();
-                          });
-                    }
-                    return TransactionsList(
+                          },
+                        );
+                      }
+                      return TransactionsList(
                         scrollController: viewmodel.scrollController,
                         fDates: viewmodel.fDates,
                         fTransactions: viewmodel.fTransactions,
                         profile: viewmodel.profile,
                         initFn: () {
                           viewmodel.init();
-                        });
-                  } else {
-                    return const Expanded(
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
-                }),
+                        },
+                      );
+                    } else {
+                      return const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                  },
+                ),
               ),
             ),
           ],
@@ -441,5 +468,3 @@ class TransactionsSection extends StatelessWidget {
     );
   }
 }
-
-
