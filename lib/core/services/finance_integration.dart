@@ -35,6 +35,7 @@ import 'package:finance_tracker/utils/services/notification_service.dart'
 import 'package:finance_tracker/utils/app_logger.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:finance_tracker/main.dart' as fn_main;
+import '../../features/home/services/finance_context_service.dart';
 
 class FinanceIntegration {
   static Future<List<SingleChildWidget>> init() async {
@@ -146,6 +147,14 @@ class FinanceIntegration {
             UserDriftRepository(context.read<AppDriftDatabase>()),
       ),
       ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+      Provider<FinanceContextService>(
+        create: (context) => FinanceContextService(
+          transactionsRepository: context.read<TransactionsDriftRepository>(),
+          balancesRepository: context.read<BalancesDriftRepository>(),
+          accountsRepository: context.read<AccountsDriftRepository>(),
+          appViewmodel: context.read<AppViewmodel>(),
+        ),
+      ),
     ];
   }
 
