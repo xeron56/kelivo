@@ -52,8 +52,7 @@ flutter:
 
   assets:
     - assets/fonts/NotoSans-Regular.ttf
-    - assets/icons/app_logo.png
-    - assets/icons/app_icon_rounded.png
+    - assets/icons/
     - assets/patterns/black-scales.png
     - assets/patterns/dark-circles.png
 

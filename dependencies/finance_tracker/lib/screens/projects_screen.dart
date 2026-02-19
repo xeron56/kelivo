@@ -22,8 +22,10 @@ class ProjectsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final projectsDriftRepository =
-        Provider.of<ProjectsDriftRepository>(context, listen: false);
+    final projectsDriftRepository = Provider.of<ProjectsDriftRepository>(
+      context,
+      listen: false,
+    );
     final accountTypesDriftRepository =
         Provider.of<AccountTypesDriftRepository>(context, listen: false);
 
@@ -35,9 +37,7 @@ class ProjectsScreen extends StatelessWidget {
       )..init(),
       builder: (context, child) => Consumer<ProjectsViewmodel>(
         builder: (context, viewmodel, child) => Scaffold(
-          appBar: AppBar(
-            actions: const [SizedBox.shrink()],
-          ),
+          appBar: AppBar(actions: const [SizedBox.shrink()]),
           body: LoadingBody(
             loadingStatus: viewmodel.loadingStatus,
             errorText: viewmodel.errorText,
@@ -61,10 +61,7 @@ class ProjectsScreen extends StatelessWidget {
                             child: Column(
                               spacing: 5,
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: createFilterMenu(
-                                viewmodel,
-                                context,
-                              ),
+                              children: createFilterMenu(viewmodel, context),
                             ),
                           ),
                         ),
@@ -72,16 +69,10 @@ class ProjectsScreen extends StatelessWidget {
                     ),
                     Visibility(
                       visible: isWide,
-                      child: const VerticalDivider(
-                        thickness: .10,
-                        width: .10,
-                      ),
+                      child: const VerticalDivider(thickness: .10, width: .10),
                     ),
                     Expanded(
-                      child: ProjectsList(
-                        viewmodel: viewmodel,
-                        isWide: isWide,
-                      ),
+                      child: ProjectsList(viewmodel: viewmodel, isWide: isWide),
                     ),
                   ],
                 );
@@ -96,10 +87,7 @@ class ProjectsScreen extends StatelessWidget {
                 width: double.maxFinite,
                 child: ListView(
                   shrinkWrap: true,
-                  children: createFilterMenu(
-                    viewmodel,
-                    context,
-                  ),
+                  children: createFilterMenu(viewmodel, context),
                 ),
               ),
             ),
@@ -107,10 +95,11 @@ class ProjectsScreen extends StatelessWidget {
           floatingActionButton: FloatingActionButton(
             onPressed: () {
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProjectEntryScreen(profile: profile),
-                  )).then((_) {
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProjectEntryScreen(profile: profile),
+                ),
+              ).then((_) {
                 viewmodel.init();
               });
             },
@@ -143,8 +132,10 @@ class ProjectsList extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Text(
                   AppLocalizations.of(context)!.myProjects,
                   style: Theme.of(context).textTheme.headlineMedium,
@@ -155,10 +146,11 @@ class ProjectsList extends StatelessWidget {
               children: [
                 Expanded(
                   child: SearchField(
-                      initText: viewmodel.searchTerm,
-                      searchFn: (term) {
-                        viewmodel.searchTerm = term;
-                      }),
+                    initValue: viewmodel.searchTerm,
+                    searchFn: (term) {
+                      viewmodel.searchTerm = term;
+                    },
+                  ),
                 ),
                 Visibility(
                   visible: !isWide,
@@ -174,9 +166,7 @@ class ProjectsList extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(
-              height: 8,
-            ),
+            const SizedBox(height: 8),
             Visibility(
               visible: viewmodel.fProjects.isEmpty,
               child: Expanded(
@@ -184,15 +174,17 @@ class ProjectsList extends StatelessWidget {
                   items: AppLocalizations.of(context)!.projects,
                   addFn: () {
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ProjectEntryScreen(profile: viewmodel.profile),
-                        )).then((_) {
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProjectEntryScreen(profile: viewmodel.profile),
+                      ),
+                    ).then((_) {
                       viewmodel.init();
                     });
                   },
-                  isListFiltered: viewmodel.projects.isNotEmpty ||
+                  isListFiltered:
+                      viewmodel.projects.isNotEmpty ||
                       (viewmodel.projects.isNotEmpty &&
                           viewmodel.fProjects.length ==
                               viewmodel.projects.length),
@@ -201,93 +193,116 @@ class ProjectsList extends StatelessWidget {
             ),
             Visibility(
               visible: viewmodel.fProjects.isNotEmpty,
-              child: Expanded(child: Builder(builder: (_) {
-                if (viewmodel.searchLoadingStatus == LoadingStatus.completed) {
-                  return ListView.builder(
-                    itemCount: viewmodel.fProjects.length,
-                    padding: const EdgeInsets.only(bottom: 50),
-                    itemBuilder: (context, index) {
-                      final p = viewmodel.fProjects[index];
+              child: Expanded(
+                child: Builder(
+                  builder: (_) {
+                    if (viewmodel.searchLoadingStatus ==
+                        LoadingStatus.completed) {
+                      return ListView.builder(
+                            itemCount: viewmodel.fProjects.length,
+                            padding: const EdgeInsets.only(bottom: 50),
+                            itemBuilder: (context, index) {
+                              final p = viewmodel.fProjects[index];
 
-                      return Card(
-                        child: Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Checkbox(
-                                value: p.status == ProjectStatus.completed,
-                                onChanged: p.status == ProjectStatus.completed
-                                    ? null
-                                    : (s) {
-                                        if (s != null) {
-                                          viewmodel.changeProjectStatus(
-                                              p, ProjectStatus.completed);
-
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(
-                                                    "${p.name} status set to : Completed")),
-                                          );
-                                        }
-                                      },
-                              ),
-                            ),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ProjectScreen(
-                                          profile: viewmodel.profile,
-                                          projectID: p.dbID,
-                                        ),
-                                      )).then((_) {
-                                    viewmodel.init();
-                                  });
-                                },
-                                borderRadius: const BorderRadius.only(
-                                    topRight: Radius.circular(14),
-                                    bottomRight: Radius.circular(14)),
-                                child: ListTile(
-                                  shape: Border(
-                                      bottom: BorderSide(
-                                          color: Theme.of(context).shadowColor,
-                                          width: 0.10)),
-                                  title: Text(p.name,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium),
-                                  trailing: Padding(
+                              return Card(
+                                child: Row(
+                                  children: [
+                                    Padding(
                                       padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        p.status.label,
-                                        overflow: TextOverflow.ellipsis,
-                                      )),
-                                  subtitle: Text(
-                                    p.description,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                      child: Checkbox(
+                                        value:
+                                            p.status == ProjectStatus.completed,
+                                        onChanged:
+                                            p.status == ProjectStatus.completed
+                                            ? null
+                                            : (s) {
+                                                if (s != null) {
+                                                  viewmodel.changeProjectStatus(
+                                                    p,
+                                                    ProjectStatus.completed,
+                                                  );
+
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        "${p.name} status set to : Completed",
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: InkWell(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ProjectScreen(
+                                                    profile: viewmodel.profile,
+                                                    projectID: p.dbID,
+                                                  ),
+                                            ),
+                                          ).then((_) {
+                                            viewmodel.init();
+                                          });
+                                        },
+                                        borderRadius: const BorderRadius.only(
+                                          topRight: Radius.circular(14),
+                                          bottomRight: Radius.circular(14),
+                                        ),
+                                        child: ListTile(
+                                          shape: Border(
+                                            bottom: BorderSide(
+                                              color: Theme.of(
+                                                context,
+                                              ).shadowColor,
+                                              width: 0.10,
+                                            ),
+                                          ),
+                                          title: Text(
+                                            p.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
+                                          ),
+                                          trailing: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              p.status.label,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            p.description,
+                                            maxLines: 4,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  )
-                      .animate(delay: 100.ms)
-                      .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
-                      .fade(curve: Curves.easeInOut, duration: 100.ms);
-                } else {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-              })),
-            )
+                              );
+                            },
+                          )
+                          .animate(delay: 100.ms)
+                          .scale(
+                            begin: const Offset(1.02, 1.02),
+                            duration: 100.ms,
+                          )
+                          .fade(curve: Curves.easeInOut, duration: 100.ms);
+                    } else {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -324,26 +339,26 @@ List<Widget> createFilterMenu(
     ),
     Visibility(
       visible: viewmodel.projects.isNotEmpty,
-      child: Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: [
-          ...viewmodel.statusCriterias.toList().map((v) => FilterChip(
-              selected: !viewmodel.statusFilters.contains(v),
-              label: Text(v.label),
-              onSelected: (s) {
-                viewmodel.addToFilter(status: v);
-              }))
-        ],
-      )
-          .animate(delay: 50.ms)
-          .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
-          .fade(curve: Curves.easeInOut, duration: 100.ms),
+      child:
+          Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  ...viewmodel.statusCriterias.toList().map(
+                    (v) => FilterChip(
+                      selected: !viewmodel.statusFilters.contains(v),
+                      label: Text(v.label),
+                      onSelected: (s) {
+                        viewmodel.addToFilter(status: v);
+                      },
+                    ),
+                  ),
+                ],
+              )
+              .animate(delay: 50.ms)
+              .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
+              .fade(curve: Curves.easeInOut, duration: 100.ms),
     ),
-    const SizedBox(
-      height: 40,
-    )
+    const SizedBox(height: 40),
   ];
 }
-
-

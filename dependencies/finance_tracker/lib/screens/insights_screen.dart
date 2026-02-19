@@ -27,37 +27,44 @@ class InsightsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profilesDriftRepository =
-        Provider.of<ProfilesDriftRepository>(context, listen: false);
-    final accountsDriftRepository =
-        Provider.of<AccountsDriftRepository>(context, listen: false);
+    final profilesDriftRepository = Provider.of<ProfilesDriftRepository>(
+      context,
+      listen: false,
+    );
+    final accountsDriftRepository = Provider.of<AccountsDriftRepository>(
+      context,
+      listen: false,
+    );
     final transactionsDriftRepository =
         Provider.of<TransactionsDriftRepository>(context, listen: false);
-    final balancesDriftRepository =
-        Provider.of<BalancesDriftRepository>(context, listen: false);
-    final budgetsDriftRepository =
-        Provider.of<BudgetsDriftRepository>(context, listen: false);
+    final balancesDriftRepository = Provider.of<BalancesDriftRepository>(
+      context,
+      listen: false,
+    );
+    final budgetsDriftRepository = Provider.of<BudgetsDriftRepository>(
+      context,
+      listen: false,
+    );
 
     return Scaffold(
       body: ChangeNotifierProvider(
         create: (context) => InsightsViewmodel(
-            profilesDriftRepository,
-            accountsDriftRepository,
-            transactionsDriftRepository,
-            balancesDriftRepository,
-            budgetsDriftRepository,
-            profile: profile)
-          ..init(),
+          profilesDriftRepository,
+          accountsDriftRepository,
+          transactionsDriftRepository,
+          balancesDriftRepository,
+          budgetsDriftRepository,
+          profile: profile,
+        )..init(),
         builder: (context, child) => Consumer<InsightsViewmodel>(
           builder: (context, viewmodel, child) => LoadingBody(
-              loadingStatus: viewmodel.loadingStatus,
-              resetErrorTextFn: () {
-                viewmodel.resetErrorText();
-              },
-              errorText: viewmodel.errorText,
-              widget: InsightsList(
-                viewmodel: viewmodel,
-              )),
+            loadingStatus: viewmodel.loadingStatus,
+            resetErrorTextFn: () {
+              viewmodel.resetErrorText();
+            },
+            errorText: viewmodel.errorText,
+            widget: InsightsList(viewmodel: viewmodel),
+          ),
         ),
       ),
     );
@@ -65,10 +72,7 @@ class InsightsScreen extends StatelessWidget {
 }
 
 class InsightsList extends StatelessWidget {
-  const InsightsList({
-    super.key,
-    required this.viewmodel,
-  });
+  const InsightsList({super.key, required this.viewmodel});
 
   final InsightsViewmodel viewmodel;
 
@@ -95,143 +99,167 @@ class InsightsList extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  ...DateFilterType.values.map((d) => Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: ChoiceChip(
-                            onSelected: (_) {
-                              if (viewmodel.calculationStatus !=
-                                  LoadingStatus.loading) {
-                                viewmodel.dateFilterType = d;
-                                if (d == DateFilterType.custom) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => StatefulBuilder(
-                                        builder: (context, setState) {
-                                      return SimpleDialog(
-                                        contentPadding: const EdgeInsets.all(8),
-                                        title: Text(
-                                            AppLocalizations.of(context)!
-                                                .dates),
-                                        children: [
-                                          Container(
+                  ...DateFilterType.values.map(
+                    (d) => Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: ChoiceChip(
+                        onSelected: (_) {
+                          if (viewmodel.calculationStatus !=
+                              LoadingStatus.loading) {
+                            viewmodel.dateFilterType = d;
+                            if (d == DateFilterType.custom) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => StatefulBuilder(
+                                  builder: (context, setState) {
+                                    return SimpleDialog(
+                                      contentPadding: const EdgeInsets.all(8),
+                                      title: Text(
+                                        AppLocalizations.of(context)?.dates ??
+                                            'Dates',
+                                      ),
+                                      children: [
+                                        Container(
+                                          width: cardWidth,
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: TheDatePicker(
+                                            initialDate: viewmodel.startDate,
+                                            onChanged: (d) async {
+                                              await viewmodel.addToFilter(
+                                                sDate: d,
+                                              );
+                                              setState(() {});
+                                            },
+                                            label:
+                                                AppLocalizations.of(
+                                                  context,
+                                                )?.startDate ??
+                                                'Start Date',
+                                            needTime: false,
+                                            datePattern:
+                                                appViewmodel
+                                                    .dateFormat
+                                                    .pattern ??
+                                                AppDateFormat.date1.pattern,
+                                          ),
+                                        ),
+                                        Container(
+                                          width: cardWidth,
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: TheDatePicker(
+                                            initialDate: viewmodel.endDate,
+                                            onChanged: (d) async {
+                                              await viewmodel.addToFilter(
+                                                eDate: d,
+                                              );
+                                              setState(() {});
+                                            },
+                                            label:
+                                                AppLocalizations.of(
+                                                  context,
+                                                )?.endDate ??
+                                                'End Date',
+                                            needTime: false,
+                                            datePattern:
+                                                appViewmodel
+                                                    .dateFormat
+                                                    .pattern ??
+                                                AppDateFormat.date1.pattern,
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: SizedBox(
                                             width: cardWidth,
-                                            padding: const EdgeInsets.all(4.0),
-                                            child: TheDatePicker(
-                                              initialDate: viewmodel.startDate,
-                                              onChanged: (d) async {
-                                                await viewmodel.addToFilter(
-                                                    sDate: d);
-                                                setState(() {});
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
                                               },
-                                              label:
-                                                  AppLocalizations.of(context)!
-                                                      .startDate,
-                                              needTime: false,
-                                              datePattern: appViewmodel
-                                                      .dateFormat.pattern ??
-                                                  AppDateFormat.date1.pattern,
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                      context,
+                                                    )?.save ??
+                                                    'Save',
+                                              ),
                                             ),
                                           ),
-                                          Container(
-                                            width: cardWidth,
-                                            padding: const EdgeInsets.all(4.0),
-                                            child: TheDatePicker(
-                                              initialDate: viewmodel.endDate,
-                                              onChanged: (d) async {
-                                                await viewmodel.addToFilter(
-                                                    eDate: d);
-                                                setState(() {});
-                                              },
-                                              label:
-                                                  AppLocalizations.of(context)!
-                                                      .endDate,
-                                              needTime: false,
-                                              datePattern: appViewmodel
-                                                      .dateFormat.pattern ??
-                                                  AppDateFormat.date1.pattern,
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: SizedBox(
-                                              width: cardWidth,
-                                              child: ElevatedButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .save)),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: 12,
-                                          )
-                                        ],
-                                      );
-                                    }),
-                                  );
-                                }
-                              }
-                            },
-                            label: Text(d.label),
-                            selected: viewmodel.dateFilterType == d),
-                      )),
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        label: Text(d.label),
+                        selected: viewmodel.dateFilterType == d,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
           viewmodel.transactions.isNotEmpty
               ? viewmodel.calculationStatus == LoadingStatus.loading
-                  ? const SizedBox(
-                      height: 200,
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ))
-                  : Wrap(
-                      alignment: WrapAlignment.center,
-                      runAlignment: WrapAlignment.center,
-                      children: [
-                        Visibility(
-                          visible: viewmodel.expenseTotals.entries.isNotEmpty,
-                          child:
-                              ExpensesSplitPieChartCard(viewmodel: viewmodel),
-                        ),
-                        Visibility(
-                          visible: viewmodel.dailyTotalTransactions.length > 1,
-                          child: DailyTransactionsBarChartCard(
-                              viewmodel: viewmodel),
-                        ),
-                        Visibility(
-                          visible: viewmodel.fundBalances.isNotEmpty &&
-                              viewmodel.fundBalances.values.first.length > 1,
-                          child:
-                              FundBalancesLineChartCard(viewmodel: viewmodel),
-                        ),
-                        Visibility(
-                          visible: viewmodel.weeklyAvgExpenses.isNotEmpty &&
-                              viewmodel.dateFilterType.index > 1 &&
-                              viewmodel
-                                  .weeklyAvgExpenses.values.first.isNotEmpty &&
-                              viewmodel.dailyTotalTransactions.length > 14,
-                          child: AverageTransactionsBarChartCard(
-                              viewmodel: viewmodel),
-                        ),
-                      ],
-                    )
+                    ? const SizedBox(
+                        height: 200,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : Wrap(
+                        alignment: WrapAlignment.center,
+                        runAlignment: WrapAlignment.center,
+                        children: [
+                          Visibility(
+                            visible: viewmodel.expenseTotals.entries.isNotEmpty,
+                            child: ExpensesSplitPieChartCard(
+                              viewmodel: viewmodel,
+                            ),
+                          ),
+                          Visibility(
+                            visible:
+                                viewmodel.dailyTotalTransactions.length > 1,
+                            child: DailyTransactionsBarChartCard(
+                              viewmodel: viewmodel,
+                            ),
+                          ),
+                          Visibility(
+                            visible:
+                                viewmodel.fundBalances.isNotEmpty &&
+                                viewmodel.fundBalances.values.first.length > 1,
+                            child: FundBalancesLineChartCard(
+                              viewmodel: viewmodel,
+                            ),
+                          ),
+                          Visibility(
+                            visible:
+                                viewmodel.weeklyAvgExpenses.isNotEmpty &&
+                                viewmodel.dateFilterType.index > 1 &&
+                                viewmodel
+                                    .weeklyAvgExpenses
+                                    .values
+                                    .first
+                                    .isNotEmpty &&
+                                viewmodel.dailyTotalTransactions.length > 14,
+                            child: AverageTransactionsBarChartCard(
+                              viewmodel: viewmodel,
+                            ),
+                          ),
+                        ],
+                      )
               : SizedBox(
                   height: 200,
                   child: Center(
-                      child: Text(
-                    AppLocalizations.of(context)!.notEnoughData,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  )),
-                )
+                    child: Text(
+                      AppLocalizations.of(context)!.notEnoughData,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ),
         ],
       ),
     );
   }
 }
-
-

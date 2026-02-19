@@ -35,9 +35,7 @@ class PaymentRemindersScreen extends StatelessWidget {
       )..init(),
       builder: (context, child) => Consumer<PaymentRemindersViewmodel>(
         builder: (context, viewmodel, child) => Scaffold(
-          appBar: AppBar(
-            actions: const [SizedBox.shrink()],
-          ),
+          appBar: AppBar(actions: const [SizedBox.shrink()]),
           body: LoadingBody(
             loadingStatus: viewmodel.loadingStatus,
             errorText: viewmodel.errorText,
@@ -61,10 +59,7 @@ class PaymentRemindersScreen extends StatelessWidget {
                             child: Column(
                               spacing: 5,
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: createFilterMenu(
-                                viewmodel,
-                                context,
-                              ),
+                              children: createFilterMenu(viewmodel, context),
                             ),
                           ),
                         ),
@@ -72,10 +67,7 @@ class PaymentRemindersScreen extends StatelessWidget {
                     ),
                     Visibility(
                       visible: isWide,
-                      child: const VerticalDivider(
-                        thickness: .10,
-                        width: .10,
-                      ),
+                      child: const VerticalDivider(thickness: .10, width: .10),
                     ),
                     Expanded(
                       child: PaymentRemindersList(
@@ -92,11 +84,12 @@ class PaymentRemindersScreen extends StatelessWidget {
           floatingActionButton: FloatingActionButton(
             onPressed: () {
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        PaymentReminderEntryScreen(profile: profile),
-                  )).then((_) {
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      PaymentReminderEntryScreen(profile: profile),
+                ),
+              ).then((_) {
                 viewmodel.init();
               });
             },
@@ -111,10 +104,7 @@ class PaymentRemindersScreen extends StatelessWidget {
                 width: double.maxFinite,
                 child: ListView(
                   shrinkWrap: true,
-                  children: createFilterMenu(
-                    viewmodel,
-                    context,
-                  ),
+                  children: createFilterMenu(viewmodel, context),
                 ),
               ),
             ),
@@ -155,8 +145,10 @@ class PaymentRemindersList extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Text(
                   AppLocalizations.of(context)!.myPaymentReminders,
                   style: Theme.of(context).textTheme.headlineMedium,
@@ -167,10 +159,11 @@ class PaymentRemindersList extends StatelessWidget {
               children: [
                 Expanded(
                   child: SearchField(
-                      initText: viewmodel.searchTerm,
-                      searchFn: (term) {
-                        viewmodel.searchTerm = term;
-                      }),
+                    initValue: viewmodel.searchTerm,
+                    searchFn: (term) {
+                      viewmodel.searchTerm = term;
+                    },
+                  ),
                 ),
                 Visibility(
                   visible: !isWide,
@@ -186,9 +179,7 @@ class PaymentRemindersList extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(
-              height: 8,
-            ),
+            const SizedBox(height: 8),
             Visibility(
               visible: viewmodel.fPaymentReminders.isEmpty,
               child: Expanded(
@@ -196,15 +187,18 @@ class PaymentRemindersList extends StatelessWidget {
                   items: AppLocalizations.of(context)!.reminders,
                   addFn: () {
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PaymentReminderEntryScreen(
-                              profile: viewmodel.profile),
-                        )).then((_) {
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PaymentReminderEntryScreen(
+                          profile: viewmodel.profile,
+                        ),
+                      ),
+                    ).then((_) {
                       viewmodel.init();
                     });
                   },
-                  isListFiltered: viewmodel.paymentReminders.isNotEmpty ||
+                  isListFiltered:
+                      viewmodel.paymentReminders.isNotEmpty ||
                       (viewmodel.paymentReminders.isNotEmpty &&
                           viewmodel.fPaymentReminders.length ==
                               viewmodel.paymentReminders.length),
@@ -213,81 +207,108 @@ class PaymentRemindersList extends StatelessWidget {
             ),
             Visibility(
               visible: viewmodel.fPaymentReminders.isNotEmpty,
-              child: Expanded(child: Builder(builder: (_) {
-                if (viewmodel.searchLoadingStatus == LoadingStatus.completed) {
-                  return ListView.builder(
-                    itemCount: viewmodel.fPaymentReminders.length,
-                    padding: const EdgeInsets.only(bottom: 50),
-                    itemBuilder: (context, index) {
-                      final p = viewmodel.fPaymentReminders[index];
+              child: Expanded(
+                child: Builder(
+                  builder: (_) {
+                    if (viewmodel.searchLoadingStatus ==
+                        LoadingStatus.completed) {
+                      return ListView.builder(
+                            itemCount: viewmodel.fPaymentReminders.length,
+                            padding: const EdgeInsets.only(bottom: 50),
+                            itemBuilder: (context, index) {
+                              final p = viewmodel.fPaymentReminders[index];
 
-                      return Card(
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () {
-                            showReminderDialog(
-                                context, p, appViewmodel, ebStyle);
-                          },
-                          child: ListTile(
-                              shape: const Border(
-                                  bottom: BorderSide(
-                                      color: Colors.transparent, width: 0.10)),
-                              title: Text(p.details,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium),
-                              trailing: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    p.amount.toCurrencyStringWSymbol(
-                                        profile.currency),
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        Theme.of(context).textTheme.titleSmall,
-                                  )),
-                              subtitle: Text(
-                                p.paymentStatus.label,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelSmall,
-                              )),
-                        ),
-                      );
-                    },
-                  )
-                      .animate(delay: 100.ms)
-                      .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
-                      .fade(curve: Curves.easeInOut, duration: 100.ms);
-                } else {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-              })),
-            )
+                              return Card(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(14),
+                                  onTap: () {
+                                    showReminderDialog(
+                                      context,
+                                      p,
+                                      appViewmodel,
+                                      ebStyle,
+                                    );
+                                  },
+                                  child: ListTile(
+                                    shape: const Border(
+                                      bottom: BorderSide(
+                                        color: Colors.transparent,
+                                        width: 0.10,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      p.details,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
+                                    trailing: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        p.amount.toCurrencyStringWSymbol(
+                                          profile.currency,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleSmall,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      p.paymentStatus.label,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                          .animate(delay: 100.ms)
+                          .scale(
+                            begin: const Offset(1.02, 1.02),
+                            duration: 100.ms,
+                          )
+                          .fade(curve: Curves.easeInOut, duration: 100.ms);
+                    } else {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<dynamic> showReminderDialog(BuildContext context, PaymentReminder p,
-      AppViewmodel appViewmodel, ButtonStyle ebStyle) {
+  Future<dynamic> showReminderDialog(
+    BuildContext context,
+    PaymentReminder p,
+    AppViewmodel appViewmodel,
+    ButtonStyle ebStyle,
+  ) {
     return showDialog(
       context: context,
       builder: (context) {
         return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: smallWidth),
             child: IntrinsicHeight(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -295,7 +316,9 @@ class PaymentRemindersList extends StatelessWidget {
                           alignment: Alignment.centerLeft,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                                vertical: 6, horizontal: 12),
+                              vertical: 6,
+                              horizontal: 12,
+                            ),
                             child: Text(
                               textAlign: TextAlign.start,
                               p.details,
@@ -310,9 +333,7 @@ class PaymentRemindersList extends StatelessWidget {
                         p.amount.toCurrencyStringWSymbol(profile.currency),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
-                      const SizedBox(
-                        width: 16,
-                      )
+                      const SizedBox(width: 16),
                     ],
                   ),
                   Flexible(
@@ -327,12 +348,14 @@ class PaymentRemindersList extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   p.paymentDate != null
-                                      ? appViewmodel.dateFormat
-                                          .format(p.paymentDate!)
+                                      ? appViewmodel.dateFormat.format(
+                                          p.paymentDate!,
+                                        )
                                       : "",
                                   overflow: TextOverflow.ellipsis,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -346,8 +369,9 @@ class PaymentRemindersList extends StatelessWidget {
                                 child: Text(
                                   p.paymentStatus.label,
                                   overflow: TextOverflow.ellipsis,
-                                  style:
-                                      Theme.of(context).textTheme.labelMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.labelMedium,
                                 ),
                               ),
                               Text(
@@ -370,15 +394,16 @@ class PaymentRemindersList extends StatelessWidget {
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    color: Theme.of(context)
-                                        .primaryColor
-                                        .withAlpha(50),
+                                    color: Theme.of(
+                                      context,
+                                    ).primaryColor.withAlpha(50),
                                   ),
                                   child: Text(
                                     p.fund?.name ?? "",
                                     overflow: TextOverflow.ellipsis,
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelMedium,
                                   ),
                                 ),
                               ),
@@ -392,15 +417,16 @@ class PaymentRemindersList extends StatelessWidget {
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    color: Theme.of(context)
-                                        .primaryColor
-                                        .withAlpha(50),
+                                    color: Theme.of(
+                                      context,
+                                    ).primaryColor.withAlpha(50),
                                   ),
                                   child: Text(
                                     p.account?.name ?? "",
                                     overflow: TextOverflow.ellipsis,
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelMedium,
                                   ),
                                 ),
                               ),
@@ -428,17 +454,17 @@ class PaymentRemindersList extends StatelessWidget {
                             onPressed: () {
                               Navigator.pop(context);
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        TransactionEntryScreen(
-                                      profile: profile,
-                                      selectedAccount: p.account,
-                                      selectedFund: p.fund,
-                                      voucherType: VoucherType.payment,
-                                      amount: p.amount,
-                                    ),
-                                  )).then((_) {
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TransactionEntryScreen(
+                                    profile: profile,
+                                    selectedAccount: p.account,
+                                    selectedFund: p.fund,
+                                    voucherType: VoucherType.payment,
+                                    amount: p.amount,
+                                  ),
+                                ),
+                              ).then((_) {
                                 viewmodel.init();
                               });
                             },
@@ -450,18 +476,21 @@ class PaymentRemindersList extends StatelessWidget {
                           child: ElevatedButton.icon(
                             style: ebStyle.copyWith(
                               backgroundColor: WidgetStatePropertyAll(
-                                  Theme.of(context).colorScheme.secondary),
+                                Theme.of(context).colorScheme.secondary,
+                              ),
                             ),
                             onPressed: () {
                               Navigator.pop(context);
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          PaymentReminderEntryScreen(
-                                            profile: profile,
-                                            paymentReminder: p,
-                                          ))).then((_) {
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      PaymentReminderEntryScreen(
+                                        profile: profile,
+                                        paymentReminder: p,
+                                      ),
+                                ),
+                              ).then((_) {
                                 viewmodel.init();
                               });
                             },
@@ -472,8 +501,9 @@ class PaymentRemindersList extends StatelessWidget {
                         const SizedBox(width: 4),
                         ElevatedButton(
                           style: ebStyle.copyWith(
-                            backgroundColor:
-                                const WidgetStatePropertyAll(Colors.red),
+                            backgroundColor: const WidgetStatePropertyAll(
+                              Colors.red,
+                            ),
                           ),
                           onPressed: () {
                             showDialog(
@@ -481,31 +511,38 @@ class PaymentRemindersList extends StatelessWidget {
                               builder: (context) => AlertDialog(
                                 actions: [
                                   TextButton(
-                                      onPressed: () async {
-                                        final hasDeleted = await viewmodel
-                                            .deleteReminder(p.dbID);
+                                    onPressed: () async {
+                                      final hasDeleted = await viewmodel
+                                          .deleteReminder(p.dbID);
 
-                                        if (hasDeleted && context.mounted) {
-                                          viewmodel.init();
-                                          Navigator.pop(context);
-                                          Navigator.pop(context);
-                                        }
-                                      },
-                                      child: Text(
-                                        AppLocalizations.of(context)!.delete,
-                                        style: const TextStyle(
-                                            color: Colors.red,
-                                            fontWeight: FontWeight.bold),
-                                      )),
-                                  TextButton(
-                                      onPressed: () {
+                                      if (hasDeleted && context.mounted) {
+                                        viewmodel.init();
                                         Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                          AppLocalizations.of(context)!.cancel))
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                    child: Text(
+                                      AppLocalizations.of(context)!.delete,
+                                      style: const TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(
+                                      AppLocalizations.of(context)!.cancel,
+                                    ),
+                                  ),
                                 ],
-                                title: Text(AppLocalizations.of(context)!
-                                    .deleteThisReminderQn),
+                                title: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.deleteThisReminderQn,
+                                ),
                               ),
                             );
                           },
@@ -553,26 +590,26 @@ List<Widget> createFilterMenu(
     ),
     Visibility(
       visible: viewmodel.paymentReminders.isNotEmpty,
-      child: Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: [
-          ...viewmodel.statusCriterias.toList().map((v) => FilterChip(
-              selected: !viewmodel.statusFilters.contains(v),
-              label: Text(v.label),
-              onSelected: (s) {
-                viewmodel.addToFilter(status: v);
-              }))
-        ],
-      )
-          .animate(delay: 50.ms)
-          .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
-          .fade(curve: Curves.easeInOut, duration: 100.ms),
+      child:
+          Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  ...viewmodel.statusCriterias.toList().map(
+                    (v) => FilterChip(
+                      selected: !viewmodel.statusFilters.contains(v),
+                      label: Text(v.label),
+                      onSelected: (s) {
+                        viewmodel.addToFilter(status: v);
+                      },
+                    ),
+                  ),
+                ],
+              )
+              .animate(delay: 50.ms)
+              .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
+              .fade(curve: Curves.easeInOut, duration: 100.ms),
     ),
-    const SizedBox(
-      height: 40,
-    )
+    const SizedBox(height: 40),
   ];
 }
-
-

@@ -12,16 +12,15 @@ import 'package:finance_tracker/widgets/shared/loading_body.dart';
 import 'package:finance_tracker/l10n/generated/app_localizations.dart';
 
 class ProfileEntryScreen extends StatelessWidget {
-  const ProfileEntryScreen({
-    super.key,
-    this.profile,
-  });
+  const ProfileEntryScreen({super.key, this.profile});
   final Profile? profile;
 
   @override
   Widget build(BuildContext context) {
-    final profilesDriftRepository =
-        Provider.of<ProfilesDriftRepository>(context, listen: false);
+    final profilesDriftRepository = Provider.of<ProfilesDriftRepository>(
+      context,
+      listen: false,
+    );
     return ChangeNotifierProvider(
       create: (context) =>
           ProfileEntryViewmodel(profilesDriftRepository, profile: profile)
@@ -36,10 +35,7 @@ class ProfileEntryScreen extends StatelessWidget {
                 viewmodel.resetErrorText();
               },
               errorText: viewmodel.errorText,
-              widget: ProfileForm(
-                viewmodel: viewmodel,
-                isNew: profile == null,
-              ),
+              widget: ProfileForm(viewmodel: viewmodel, isNew: profile == null),
             );
           },
         ),
@@ -66,16 +62,27 @@ class ProfileForm extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(
-                      height: 4,
-                    ),
+                    const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: TextFormField(
                         initialValue: viewmodel.profileName,
                         decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context)!.profileName,
+                          label: RichText(
+                            text: TextSpan(
+                              text: AppLocalizations.of(context)!.profileName,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              children: [
+                                const TextSpan(
+                                  text: ' *',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ],
+                            ),
+                          ),
                           hintText: "Personal, Business etc.",
                           errorText: viewmodel.nameError != ""
                               ? viewmodel.nameError
@@ -88,7 +95,9 @@ class ProfileForm extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: TextFormField(
                         initialValue: viewmodel.nickName,
                         decoration: InputDecoration(
@@ -104,31 +113,50 @@ class ProfileForm extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: DropdownMenu<Currency>(
-                          width: smallWidth,
-                          hintText: AppLocalizations.of(context)!.currency,
-                          label: Text(AppLocalizations.of(context)!.currency),
-                          errorText: viewmodel.currencyError != ""
-                              ? viewmodel.currencyError
-                              : null,
-                          onSelected: ((c) {
-                            viewmodel.currency = c;
-                          }),
-                          initialSelection: viewmodel.currency,
-                          dropdownMenuEntries: [
-                            ...Currency.values.map((c) => DropdownMenuEntry(
-                                value: c,
-                                label: Currency.values[c.index].name,
-                                trailingIcon: Text(
-                                  Currency.values[c.index].symbol,
-                                )))
-                          ]),
+                        width: smallWidth,
+                        hintText: AppLocalizations.of(context)!.currency,
+                        label: RichText(
+                          text: TextSpan(
+                            text: AppLocalizations.of(context)!.currency,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            children: [
+                              const TextSpan(
+                                text: ' *',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
+                        errorText: viewmodel.currencyError != ""
+                            ? viewmodel.currencyError
+                            : null,
+                        onSelected: ((c) {
+                          viewmodel.currency = c;
+                        }),
+                        initialSelection: viewmodel.currency,
+                        dropdownMenuEntries: [
+                          ...Currency.values.map(
+                            (c) => DropdownMenuEntry(
+                              value: c,
+                              label: Currency.values[c.index].name,
+                              trailingIcon: Text(
+                                Currency.values[c.index].symbol,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: TextFormField(
                         initialValue: viewmodel.address,
                         decoration: InputDecoration(
@@ -144,11 +172,13 @@ class ProfileForm extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: TextFormField(
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
                         initialValue: viewmodel.zip,
                         decoration: InputDecoration(
@@ -164,7 +194,9 @@ class ProfileForm extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: TextFormField(
                         initialValue: viewmodel.email,
                         decoration: InputDecoration(
@@ -180,12 +212,14 @@ class ProfileForm extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: TextFormField(
                         initialValue: viewmodel.phone,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)!.phone,
@@ -200,7 +234,9 @@ class ProfileForm extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: TextFormField(
                         initialValue: viewmodel.tin,
                         decoration: InputDecoration(
@@ -232,9 +268,11 @@ class ProfileForm extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => AccountsImportScreen(
-                                        profile: viewmodel.profile!),
+                                      profile: viewmodel.profile!,
+                                    ),
                                   ),
-                                  (r) => false)
+                                  (r) => false,
+                                )
                               : Navigator.pop(context);
                         } else {
                           Navigator.pop(context);
@@ -245,12 +283,12 @@ class ProfileForm extends StatelessWidget {
                   child: viewmodel.loadingStatus == LoadingStatus.submitting
                       ? const Padding(
                           padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white),
                         )
-                      : Text(AppLocalizations.of(context)!.save,
-                          style: const TextStyle(fontSize: 22)),
+                      : Text(
+                          AppLocalizations.of(context)!.save,
+                          style: const TextStyle(fontSize: 22),
+                        ),
                 ),
               ),
             ),
@@ -260,5 +298,3 @@ class ProfileForm extends StatelessWidget {
     );
   }
 }
-
-

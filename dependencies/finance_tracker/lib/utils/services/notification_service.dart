@@ -11,7 +11,8 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> onDidReceiveNotification(
-      NotificationResponse notificationResponse) async {
+    NotificationResponse notificationResponse,
+  ) async {
     AppLogger.instance.info("Notification received");
   }
 
@@ -22,14 +23,19 @@ class NotificationService {
       const DarwinInitializationSettings iOSInitializationSettings =
           DarwinInitializationSettings();
 
+      const DarwinInitializationSettings macOSInitializationSettings =
+          DarwinInitializationSettings();
+
       const LinuxInitializationSettings linuxInitializationSettings =
           LinuxInitializationSettings(defaultActionName: 'Open notification');
 
       const InitializationSettings initializationSettings =
           InitializationSettings(
-              android: androidInitializationSettings,
-              iOS: iOSInitializationSettings,
-              linux: linuxInitializationSettings);
+            android: androidInitializationSettings,
+            iOS: iOSInitializationSettings,
+            macOS: macOSInitializationSettings,
+            linux: linuxInitializationSettings,
+          );
       await flutterLocalNotificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
@@ -40,16 +46,18 @@ class NotificationService {
 
       await flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.requestNotificationsPermission();
     } catch (e) {
-      AppLogger.instance
-          .error("Failed to initialise notification service. ${e.toString()}");
+      AppLogger.instance.error(
+        "Failed to initialise notification service. ${e.toString()}",
+      );
     }
   }
 
   static Future<List<PendingNotificationRequest>>
-      getPendingNotifications() async {
+  getPendingNotifications() async {
     if (Platform.isLinux) {
       return [];
     }
@@ -63,8 +71,9 @@ class NotificationService {
     try {
       await flutterLocalNotificationsPlugin.cancelAll();
     } catch (e) {
-      AppLogger.instance
-          .error("Failed to cancel all notifications. ${e.toString()}");
+      AppLogger.instance.error(
+        "Failed to cancel all notifications. ${e.toString()}",
+      );
     }
   }
 
@@ -72,13 +81,19 @@ class NotificationService {
     try {
       await flutterLocalNotificationsPlugin.cancel(id);
     } catch (e) {
-      AppLogger.instance
-          .error("Failed to cancel notification. ${e.toString()}");
+      AppLogger.instance.error(
+        "Failed to cancel notification. ${e.toString()}",
+      );
     }
   }
 
-  static Future<void> scheduleDailyReminder(int id, String title, String body,
-      TimeOfDay time, String screenRoute) async {
+  static Future<void> scheduleDailyReminder(
+    int id,
+    String title,
+    String body,
+    TimeOfDay time,
+    String screenRoute,
+  ) async {
     try {
       if (!Platform.isLinux) {
         String channelID = 'pursenal_daily_reminder_channel';
@@ -123,11 +138,13 @@ class NotificationService {
         );
 
         AppLogger.instance.info(
-            "Daily reminder scheduled at ${scheduledTime.hour}:${scheduledTime.minute}");
+          "Daily reminder scheduled at ${scheduledTime.hour}:${scheduledTime.minute}",
+        );
       }
     } catch (e) {
-      AppLogger.instance
-          .error("Failed to schedule daily reminder. ${e.toString()}");
+      AppLogger.instance.error(
+        "Failed to schedule daily reminder. ${e.toString()}",
+      );
     }
   }
 
@@ -179,8 +196,8 @@ class NotificationService {
         matchDateTimeComponents: (!isWeekly && paymentDate != null)
             ? null // Don't repeat
             : isWeekly
-                ? DateTimeComponents.dayOfWeekAndTime
-                : DateTimeComponents.dayOfMonthAndTime,
+            ? DateTimeComponents.dayOfWeekAndTime
+            : DateTimeComponents.dayOfMonthAndTime,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     } catch (e) {
@@ -226,8 +243,11 @@ class NotificationService {
 
     if (scheduled.isBefore(now)) {
       final nextMonth = DateTime(year, month + 1);
-      final daysInNextMonth =
-          DateTime(nextMonth.year, nextMonth.month + 1, 0).day;
+      final daysInNextMonth = DateTime(
+        nextMonth.year,
+        nextMonth.month + 1,
+        0,
+      ).day;
       final validNextDay = day <= daysInNextMonth ? day : daysInNextMonth;
 
       scheduled = tz.TZDateTime.local(
@@ -251,4 +271,3 @@ Future<void> requestNotificationPermission() async {
     }
   }
 }
-

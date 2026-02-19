@@ -376,7 +376,7 @@ class TransactionsSection extends StatelessWidget {
                     children: [
                       Expanded(
                         child: SearchField(
-                          initText: viewmodel.searchTerm,
+                          initValue: viewmodel.searchTerm,
                           searchFn: (term) {
                             viewmodel.searchTerm = term;
                           },

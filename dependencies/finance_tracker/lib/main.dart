@@ -24,7 +24,7 @@ import 'package:finance_tracker/core/repositories/drift/receivables_drift_reposi
 import 'package:finance_tracker/core/repositories/drift/transactions_drift_repository.dart';
 import 'package:finance_tracker/core/repositories/drift/user_drift_repository.dart';
 import 'package:finance_tracker/core/repositories/drift/wallets_drift_repository.dart';
-import 'package:finance_tracker/screens/welcome_screen.dart';
+import 'package:finance_tracker/screens/profile_entry_screen.dart';
 import 'package:finance_tracker/utils/app_paths.dart';
 import 'package:finance_tracker/utils/services/notification_service.dart';
 import 'package:finance_tracker/providers/theme_provider.dart';
@@ -98,19 +98,20 @@ Future<Widget> createFinanceTrackerApp() async {
         create: (context) =>
             ProfilesDriftRepository(context.read<AppDriftDatabase>()),
       ),
+      Provider<AccountsDriftRepository>(
+        create: (context) =>
+            AccountsDriftRepository(context.read<AppDriftDatabase>()),
+      ),
       ChangeNotifierProvider<AppViewmodel>(
         create: (context) => AppViewmodel(
           context.read<ProfilesDriftRepository>(),
           context.read<DatabaseDriftRepository>(),
+          context.read<AccountsDriftRepository>(),
         )..init(),
       ),
       Provider<AccountTypesDriftRepository>(
         create: (context) =>
             AccountTypesDriftRepository(context.read<AppDriftDatabase>()),
-      ),
-      Provider<AccountsDriftRepository>(
-        create: (context) =>
-            AccountsDriftRepository(context.read<AppDriftDatabase>()),
       ),
       Provider<BalancesDriftRepository>(
         create: (context) =>
@@ -203,8 +204,8 @@ class FinanceTrackerApp extends StatelessWidget {
               loadingStatus: viewmodel.loadingStatus,
               errorText: viewmodel.errorText,
               widget: viewmodel.selectedProfile == null
-                  // If the user hasn't yet created a profile, they are forwarded to WelcomeScreen
-                  ? const WelcomeScreen()
+                  // If the user hasn't yet created a profile, they are forwarded to ProfileEntryScreen
+                  ? const ProfileEntryScreen()
                   : MainScreen(profile: viewmodel.selectedProfile!),
               resetErrorTextFn: () {
                 viewmodel.resetErrorText();
