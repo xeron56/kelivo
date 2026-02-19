@@ -160,7 +160,13 @@ class FinanceIntegration {
 
   static Future<String> _getDatabasePath() async {
     final appDir = await getApplicationSupportDirectory();
-    return p.join(appDir.path, 'db', 'app_drift_database.sqlite');
+    final dbPath = p.join(appDir.path, 'db', 'app_drift_database.sqlite');
+    // Ensure directory exists
+    final dbDir = Directory(p.dirname(dbPath));
+    if (!await dbDir.exists()) {
+      await dbDir.create(recursive: true);
+    }
+    return dbPath;
   }
 
   static DatabaseConnection _backgroundConnection(String path) {

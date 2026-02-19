@@ -21,10 +21,32 @@ class FinanceContextService {
     if (profile == null) return '';
 
     final sb = StringBuffer();
-    sb.writeln('## Current Financial Context');
+
+    // SECTION 1: SYSTEM PERSONA & INSTRUCTIONS
+    sb.writeln('## FINANCIAL ASSISTANT MODE ACTIVE');
     sb.writeln(
-      'Here is the current financial status for the user (Profile: ${profile.name}):',
+      'You are a helpful, data-driven financial assistant for ${profile.name}.',
     );
+    sb.writeln(
+      'Your goal is to answer questions using the provided "Real-Time Financial Data" below.',
+    );
+    sb.writeln('RULES:');
+    sb.writeln(
+      '1. ALWAYS cite specific amounts and dates from the data to back up your answers.',
+    );
+    sb.writeln(
+      '2. If the user asks "What is my balance?", use the "Total Net Worth / Closing Balance".',
+    );
+    sb.writeln(
+      '3. If the user asks about recent spending, summarize the "Recent Activity".',
+    );
+    sb.writeln(
+      '4. If data is missing (e.g., spending from last year), explain that you only have access to the recent transactions listed below.',
+    );
+    sb.writeln('5. Be concise and professional. Do not make up data.');
+
+    sb.writeln('\n## REAL-TIME FINANCIAL DATA');
+    sb.writeln('------------------------------');
 
     try {
       // 1. Balances
@@ -32,26 +54,30 @@ class FinanceContextService {
         DateTime.now(),
         profile.dbID,
       );
-      // Assuming balance is in cents/smallest unit, divide by 100 for display
+      // Assuming balance is in cents/smallest unit
       sb.writeln(
-        '- **Total Closing Balance**: ${(balance / 100.0).toStringAsFixed(2)}',
+        '- **Total Net Worth / Closing Balance**: ${(balance / 100.0).toStringAsFixed(2)} ${profile.currency.name}',
       );
 
-      // 2. Recent Transactions (last 10)
+      // 2. Recent Transactions (last 15)
       final transactions = await transactionsRepository.getNTransactions(
-        n: 10,
+        n: 15,
         profileId: profile.dbID,
       );
 
       if (transactions.isNotEmpty) {
-        sb.writeln('\n### Recent Transactions (Last 10):');
+        sb.writeln('\n### Recent Activity (Last 15 Transactions):');
+        sb.writeln('| Date | Type | Amount | Description |');
+        sb.writeln('|---|---|---|---|');
         for (final t in transactions) {
           final date = t.voucherDate.toIso8601String().split('T')[0];
           final type = t.voucherType.label;
-          // Assuming amount is in cents
+          // Heuristic: Receipt = Income, Payment = Expense
+          final isIncome = t.voucherType.name.toLowerCase() == 'receipt';
+          final sign = isIncome ? '+' : '-';
           final amount = (t.amount / 100.0).toStringAsFixed(2);
-          final memo = t.narration.isNotEmpty ? '(${t.narration})' : '';
-          sb.writeln('- $date [$type] $amount $memo');
+          final memo = t.narration.replaceAll('\n', ' ').trim();
+          sb.writeln('| $date | $type | $sign$amount | $memo |');
         }
       }
 
@@ -60,20 +86,22 @@ class FinanceContextService {
         profileId: profile.dbID,
       );
       if (ledgers.isNotEmpty) {
-        sb.writeln('\n### Accounts Summary:');
-        for (final l in ledgers.take(15)) {
-          sb.writeln(
-            '- ${l.account.name} (${l.accountType.name}): ${(l.balance / 100.0).toStringAsFixed(2)}',
-          );
+        sb.writeln('\n### Account Balances:');
+        for (final l in ledgers) {
+          // Skip zero balance if list is long, or show all? Let's show non-zero to save context
+          if (l.balance != 0) {
+            sb.writeln(
+              '- **${l.account.name}** (${l.accountType.name}): ${(l.balance / 100.0).toStringAsFixed(2)}',
+            );
+          }
         }
       }
     } catch (e) {
-      sb.writeln('Error fetching some financial data: $e');
+      sb.writeln('Error accessing financial DB: $e');
     }
 
-    sb.writeln(
-      '\nUse this context to answer user questions about their finances. If the answer is not in this context, politely explain you only have access to recent data.',
-    );
+    sb.writeln('------------------------------');
+    sb.writeln('End of Financial Context. Await user query.');
 
     return sb.toString();
   }

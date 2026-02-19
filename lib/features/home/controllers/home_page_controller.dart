@@ -274,7 +274,13 @@ class HomePageController extends ChangeNotifier {
       ocrHandler: (imagePaths) =>
           _ocrService.getOcrTextForImages(imagePaths, _context),
       geminiThoughtSignatureHandler: _appendGeminiThoughtSignatureForApi,
-      financeContextService: _context.read<FinanceContextService>(),
+      financeContextService: () {
+        try {
+          return _context.read<FinanceContextService>();
+        } catch (_) {
+          return null;
+        }
+      }(),
     );
     _messageBuilderService.ocrTextWrapper = _ocrService.wrapOcrBlock;
     _generationController = GenerationController(
