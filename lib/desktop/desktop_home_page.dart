@@ -32,16 +32,14 @@ class DesktopHomePage extends StatefulWidget {
 }
 
 class _DesktopHomePageState extends State<DesktopHomePage> {
-  int _tabIndex = 0; // 0=Chat, 1=Translate, 2=Storage, 3=Settings
+  int _tabIndex = 0; // 0=Chat, 1=Translate, 2=Storage, 3=Settings, 4=Finance
   bool _storageVisited = false;
 
   StreamSubscription<HotkeyAction>? _hotkeySub;
-  late Future<Widget> _financeAppFuture;
 
   @override
   void initState() {
     super.initState();
-    _financeAppFuture = createFinanceTrackerApp();
     if (widget.initialTabIndex != null) {
       _tabIndex = widget.initialTabIndex!.clamp(0, 3);
     }
@@ -167,16 +165,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                     key: const ValueKey('settings_page'),
                     initialProviderKey: widget.initialProviderKey,
                   ),
-                  FutureBuilder<Widget>(
-                    future: _financeAppFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done &&
-                          snapshot.hasData) {
-                        return snapshot.data!;
-                      }
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                  ),
+                  const FinanceTrackerApp(),
                 ],
               ),
             ),

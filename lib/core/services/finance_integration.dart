@@ -79,13 +79,6 @@ class FinanceIntegration {
         create: (context) =>
             ProfilesDriftRepository(context.read<AppDriftDatabase>()),
       ),
-      ChangeNotifierProvider<AppViewmodel>(
-        create: (context) => AppViewmodel(
-          context.read<ProfilesDriftRepository>(),
-          context.read<DatabaseDriftRepository>(),
-          context.read<AccountsDriftRepository>(), // Add AccountsRepository
-        )..init(),
-      ),
       Provider<AccountTypesDriftRepository>(
         create: (context) =>
             AccountTypesDriftRepository(context.read<AppDriftDatabase>()),
@@ -93,6 +86,13 @@ class FinanceIntegration {
       Provider<AccountsDriftRepository>(
         create: (context) =>
             AccountsDriftRepository(context.read<AppDriftDatabase>()),
+      ),
+      ChangeNotifierProvider<AppViewmodel>(
+        create: (context) => AppViewmodel(
+          context.read<ProfilesDriftRepository>(),
+          context.read<DatabaseDriftRepository>(),
+          context.read<AccountsDriftRepository>(), // Add AccountsRepository
+        )..init(),
       ),
       Provider<BalancesDriftRepository>(
         create: (context) =>
