@@ -115,9 +115,6 @@ class MessageGenerationService {
       currentConversationId: currentConversation?.id,
     );
 
-    // Inject finance context
-    await messageBuilderService.injectFinanceContext(apiMessages);
-
     final hasBuiltInSearch = messageBuilderService.hasBuiltInGeminiSearch(
       settings,
       providerKey,
