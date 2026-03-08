@@ -37,7 +37,6 @@ import '../services/message_generation_service.dart';
 import '../services/ocr_service.dart';
 import '../services/translation_service.dart';
 import '../services/file_upload_service.dart';
-import '../services/finance_context_service.dart';
 import '../widgets/chat_input_bar.dart';
 import '../../model/widgets/model_select_sheet.dart';
 
@@ -274,13 +273,6 @@ class HomePageController extends ChangeNotifier {
       ocrHandler: (imagePaths) =>
           _ocrService.getOcrTextForImages(imagePaths, _context),
       geminiThoughtSignatureHandler: _appendGeminiThoughtSignatureForApi,
-      financeContextService: () {
-        try {
-          return _context.read<FinanceContextService>();
-        } catch (_) {
-          return null;
-        }
-      }(),
     );
     _messageBuilderService.ocrTextWrapper = _ocrService.wrapOcrBlock;
     _generationController = GenerationController(
@@ -329,6 +321,38 @@ class HomePageController extends ChangeNotifier {
         showAppSnackBar(
           _context,
           message: l10n.homePagePleaseSelectModel,
+          type: NotificationType.warning,
+        );
+        return;
+      }
+      if (warning == 'finance_mcp_disabled') {
+        showAppSnackBar(
+          _context,
+          message: 'Finance Assistant requires MCP to be enabled.',
+          type: NotificationType.warning,
+        );
+        return;
+      }
+      if (warning == 'finance_mcp_access_disabled') {
+        showAppSnackBar(
+          _context,
+          message:
+              'Finance Assistant MCP access is disabled in Settings > MCP.',
+          type: NotificationType.warning,
+        );
+        return;
+      }
+      if (warning == 'finance_tool_model_required') {
+        final assistant = _context.read<AssistantProvider>().currentAssistant;
+        final settings = _context.read<SettingsProvider>();
+        final modelId = assistant?.chatModelId ?? settings.currentModelId;
+        final modelLabel = (modelId == null || modelId.trim().isEmpty)
+            ? 'current model'
+            : modelId;
+        showAppSnackBar(
+          _context,
+          message:
+              'Finance Assistant needs a tool-capable model. $modelLabel cannot call local MCP tools.',
           type: NotificationType.warning,
         );
       }
