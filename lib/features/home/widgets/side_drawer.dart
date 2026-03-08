@@ -1859,45 +1859,46 @@ extension on _SideDrawerState {
             await showAssistantTagsManagerDialog(context, assistantId: a.id);
           },
         ),
-        DesktopContextMenuItem(
-          icon: Lucide.Trash2,
-          label: l10n.assistantTagsContextMenuDeleteAssistant,
-          danger: true,
-          onTap: () async {
-            final confirmed = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text(l10n.assistantSettingsDeleteDialogTitle),
-                content: Text(l10n.assistantSettingsDeleteDialogContent),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: Text(l10n.assistantSettingsDeleteDialogCancel),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                    child: Text(l10n.assistantSettingsDeleteDialogConfirm),
-                  ),
-                ],
-              ),
-            );
-            if (confirmed != true) return;
-            final ok = await context.read<AssistantProvider>().deleteAssistant(
-              a.id,
-            );
-            if (!ok) {
-              showAppSnackBar(
-                context,
-                message: l10n.assistantSettingsAtLeastOneAssistantRequired,
-                type: NotificationType.warning,
+        if (a.deletable)
+          DesktopContextMenuItem(
+            icon: Lucide.Trash2,
+            label: l10n.assistantTagsContextMenuDeleteAssistant,
+            danger: true,
+            onTap: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(l10n.assistantSettingsDeleteDialogTitle),
+                  content: Text(l10n.assistantSettingsDeleteDialogContent),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: Text(l10n.assistantSettingsDeleteDialogCancel),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: Text(l10n.assistantSettingsDeleteDialogConfirm),
+                    ),
+                  ],
+                ),
               );
-            } else {
-              try {
-                await context.read<TagProvider>().unassignAssistant(a.id);
-              } catch (_) {}
-            }
-          },
-        ),
+              if (confirmed != true) return;
+              final ok = await context
+                  .read<AssistantProvider>()
+                  .deleteAssistant(a.id);
+              if (!ok) {
+                showAppSnackBar(
+                  context,
+                  message: l10n.assistantSettingsAtLeastOneAssistantRequired,
+                  type: NotificationType.warning,
+                );
+              } else {
+                try {
+                  await context.read<TagProvider>().unassignAssistant(a.id);
+                } catch (_) {}
+              }
+            },
+          ),
       ],
     );
   }
@@ -1983,54 +1984,55 @@ extension on _SideDrawerState {
                     );
                   },
                 ),
-                row(
-                  l10n.assistantTagsContextMenuDeleteAssistant,
-                  Lucide.Trash2,
-                  () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx2) => AlertDialog(
-                        title: Text(l10n.assistantSettingsDeleteDialogTitle),
-                        content: Text(
-                          l10n.assistantSettingsDeleteDialogContent,
+                if (a.deletable)
+                  row(
+                    l10n.assistantTagsContextMenuDeleteAssistant,
+                    Lucide.Trash2,
+                    () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx2) => AlertDialog(
+                          title: Text(l10n.assistantSettingsDeleteDialogTitle),
+                          content: Text(
+                            l10n.assistantSettingsDeleteDialogContent,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx2).pop(false),
+                              child: Text(
+                                l10n.assistantSettingsDeleteDialogCancel,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx2).pop(true),
+                              child: Text(
+                                l10n.assistantSettingsDeleteDialogConfirm,
+                              ),
+                            ),
+                          ],
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx2).pop(false),
-                            child: Text(
-                              l10n.assistantSettingsDeleteDialogCancel,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx2).pop(true),
-                            child: Text(
-                              l10n.assistantSettingsDeleteDialogConfirm,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmed != true) return;
-                    final ok = await context
-                        .read<AssistantProvider>()
-                        .deleteAssistant(a.id);
-                    if (!ok) {
-                      showAppSnackBar(
-                        context,
-                        message:
-                            l10n.assistantSettingsAtLeastOneAssistantRequired,
-                        type: NotificationType.warning,
                       );
-                    } else {
-                      try {
-                        await context.read<TagProvider>().unassignAssistant(
-                          a.id,
+                      if (confirmed != true) return;
+                      final ok = await context
+                          .read<AssistantProvider>()
+                          .deleteAssistant(a.id);
+                      if (!ok) {
+                        showAppSnackBar(
+                          context,
+                          message:
+                              l10n.assistantSettingsAtLeastOneAssistantRequired,
+                          type: NotificationType.warning,
                         );
-                      } catch (_) {}
-                    }
-                  },
-                  danger: true,
-                ),
+                      } else {
+                        try {
+                          await context.read<TagProvider>().unassignAssistant(
+                            a.id,
+                          );
+                        } catch (_) {}
+                      }
+                    },
+                    danger: true,
+                  ),
               ],
             ),
           ),

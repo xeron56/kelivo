@@ -1077,38 +1077,39 @@ class _DesktopAssistantCardState extends State<_DesktopAssistantCard> {
                               }
                             },
                           ),
-                          _DeleteAssistantIcon(
-                            onConfirm: () async {
-                              final l10n = AppLocalizations.of(context)!;
-                              final count = context
-                                  .read<AssistantProvider>()
-                                  .assistants
-                                  .length;
-                              if (count <= 1) {
-                                showAppSnackBar(
-                                  context,
-                                  message: l10n
-                                      .assistantSettingsAtLeastOneAssistantRequired,
-                                  type: NotificationType.warning,
-                                );
-                                return;
-                              }
-                              final ok = await _confirmDeleteDesktop(context);
-                              if (ok == true) {
-                                final success = await context
+                          if (widget.item.deletable)
+                            _DeleteAssistantIcon(
+                              onConfirm: () async {
+                                final l10n = AppLocalizations.of(context)!;
+                                final count = context
                                     .read<AssistantProvider>()
-                                    .deleteAssistant(widget.item.id);
-                                if (success != true) {
+                                    .assistants
+                                    .length;
+                                if (count <= 1) {
                                   showAppSnackBar(
                                     context,
                                     message: l10n
                                         .assistantSettingsAtLeastOneAssistantRequired,
                                     type: NotificationType.warning,
                                   );
+                                  return;
                                 }
-                              }
-                            },
-                          ),
+                                final ok = await _confirmDeleteDesktop(context);
+                                if (ok == true) {
+                                  final success = await context
+                                      .read<AssistantProvider>()
+                                      .deleteAssistant(widget.item.id);
+                                  if (success != true) {
+                                    showAppSnackBar(
+                                      context,
+                                      message: l10n
+                                          .assistantSettingsAtLeastOneAssistantRequired,
+                                      type: NotificationType.warning,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
                         ],
                       ),
                       const SizedBox(height: 6),

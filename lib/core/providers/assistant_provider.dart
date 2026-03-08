@@ -508,9 +508,13 @@ class AssistantProvider extends ChangeNotifier {
   Future<bool> deleteAssistant(String id) async {
     final idx = _assistants.indexWhere((a) => a.id == id);
     if (idx == -1) return false;
+    final assistant = _assistants[idx];
+    if (!assistant.deletable || assistant.id == financeAssistantId) {
+      return false;
+    }
     // Do not allow deleting the last remaining assistant
     if (_assistants.length <= 1) return false;
-    final removingCurrent = _assistants[idx].id == _currentAssistantId;
+    final removingCurrent = assistant.id == _currentAssistantId;
     _assistants.removeAt(idx);
     if (removingCurrent) {
       _currentAssistantId = _assistants.isNotEmpty
