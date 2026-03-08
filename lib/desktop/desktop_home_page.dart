@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
-import '../shared/responsive/breakpoints.dart';
 import 'desktop_nav_rail.dart';
 import 'desktop_chat_page.dart';
 import 'window_title_bar.dart';
@@ -11,6 +10,8 @@ import '../features/settings/pages/storage_space_page.dart';
 import 'package:window_manager/window_manager.dart';
 import 'dart:async';
 import 'hotkeys/hotkey_event_bus.dart';
+import 'package:provider/provider.dart';
+import '../core/providers/assistant_provider.dart';
 
 import 'hotkeys/chat_action_bus.dart';
 import 'package:finance_tracker/finance_tracker.dart';
@@ -41,7 +42,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
   void initState() {
     super.initState();
     if (widget.initialTabIndex != null) {
-      _tabIndex = widget.initialTabIndex!.clamp(0, 3);
+      _tabIndex = widget.initialTabIndex!.clamp(0, 4);
     }
     _storageVisited = _tabIndex == 2;
     // 初始进入时如果就是聊天页，则聚焦聊天输入框
@@ -119,6 +120,13 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
 
     final isWindows = defaultTargetPlatform == TargetPlatform.windows;
 
+    final assistantProvider = context.watch<AssistantProvider>();
+    final bool isFinanceAssistantSelected = assistantProvider
+        .isFinanceAssistantId(assistantProvider.currentAssistantId);
+    final int navActiveIndex = (_tabIndex == 0 && isFinanceAssistantSelected)
+        ? 5
+        : _tabIndex;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
@@ -129,7 +137,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
         Widget body = Row(
           children: [
             DesktopNavRail(
-              activeIndex: _tabIndex,
+              activeIndex: navActiveIndex,
               onTapChat: () {
                 setState(() => _tabIndex = 0);
                 // 切换到聊天页时聚焦输入框
@@ -144,6 +152,17 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                 setState(() => _tabIndex = 3);
               },
               onTapFinance: () => setState(() => _tabIndex = 4),
+              onTapFinanceAssistant: () async {
+                final ap = context.read<AssistantProvider>();
+                await ap.ensureDefaults(context);
+                final financeAssistant = ap.financeAssistant;
+                if (financeAssistant != null) {
+                  await ap.setCurrentAssistant(financeAssistant.id);
+                }
+                if (!mounted) return;
+                setState(() => _tabIndex = 0);
+                ChatActionBus.instance.fire(ChatAction.focusInput);
+              },
             ),
             Expanded(
               // Keep all pages alive so ongoing chat streams are not canceled

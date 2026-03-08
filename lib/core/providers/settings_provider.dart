@@ -152,6 +152,11 @@ class SettingsProvider extends ChangeNotifier {
   static const String _searchEnabledKey = 'search_enabled_v1';
   static const String _searchAutoTestOnLaunchKey =
       'search_auto_test_on_launch_v1';
+  static const String _mcpEnabledKey = 'mcp_enabled_v1';
+  static const String _mcpFinanceAssistantAccessKey =
+      'mcp_finance_assistant_access_v1';
+  static const String _mcpGeneralFinanceAccessKey =
+      'mcp_general_finance_access_v1';
   static const String _webDavConfigKey = 'webdav_config_v1';
   // Global network proxy
   static const String _globalProxyEnabledKey = 'global_proxy_enabled_v1';
@@ -252,6 +257,12 @@ class SettingsProvider extends ChangeNotifier {
   bool get searchEnabled => _searchEnabled;
   bool _searchAutoTestOnLaunch = false;
   bool get searchAutoTestOnLaunch => _searchAutoTestOnLaunch;
+  bool _mcpEnabled = true;
+  bool get mcpEnabled => _mcpEnabled;
+  bool _financeAssistantMcpAccess = true;
+  bool get financeAssistantMcpAccess => _financeAssistantMcpAccess;
+  bool _generalChatFinanceMcpAccess = false;
+  bool get generalChatFinanceMcpAccess => _generalChatFinanceMcpAccess;
   // Ephemeral connection test results: serviceId -> connected (true), failed (false), or null (not tested)
   final Map<String, bool?> _searchConnection = <String, bool?>{};
   Map<String, bool?> get searchConnection =>
@@ -603,6 +614,11 @@ class SettingsProvider extends ChangeNotifier {
     _searchEnabled = prefs.getBool(_searchEnabledKey) ?? false;
     _searchAutoTestOnLaunch =
         prefs.getBool(_searchAutoTestOnLaunchKey) ?? false;
+    _mcpEnabled = prefs.getBool(_mcpEnabledKey) ?? true;
+    _financeAssistantMcpAccess =
+        prefs.getBool(_mcpFinanceAssistantAccessKey) ?? true;
+    _generalChatFinanceMcpAccess =
+        prefs.getBool(_mcpGeneralFinanceAccessKey) ?? false;
 
     // load global proxy
     _globalProxyEnabled = prefs.getBool(_globalProxyEnabledKey) ?? false;
@@ -2375,6 +2391,30 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     await prefs.setBool(_searchAutoTestOnLaunchKey, enabled);
   }
 
+  Future<void> setMcpEnabled(bool enabled) async {
+    if (_mcpEnabled == enabled) return;
+    _mcpEnabled = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_mcpEnabledKey, enabled);
+  }
+
+  Future<void> setFinanceAssistantMcpAccess(bool enabled) async {
+    if (_financeAssistantMcpAccess == enabled) return;
+    _financeAssistantMcpAccess = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_mcpFinanceAssistantAccessKey, enabled);
+  }
+
+  Future<void> setGeneralChatFinanceMcpAccess(bool enabled) async {
+    if (_generalChatFinanceMcpAccess == enabled) return;
+    _generalChatFinanceMcpAccess = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_mcpGeneralFinanceAccessKey, enabled);
+  }
+
   // Combined update for settings
   Future<void> updateSettings(SettingsProvider newSettings) async {
     if (!listEquals(_searchServices, newSettings._searchServices)) {
@@ -2392,6 +2432,20 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     if (_searchAutoTestOnLaunch != newSettings._searchAutoTestOnLaunch) {
       await setSearchAutoTestOnLaunch(newSettings._searchAutoTestOnLaunch);
     }
+    if (_mcpEnabled != newSettings._mcpEnabled) {
+      await setMcpEnabled(newSettings._mcpEnabled);
+    }
+    if (_financeAssistantMcpAccess != newSettings._financeAssistantMcpAccess) {
+      await setFinanceAssistantMcpAccess(
+        newSettings._financeAssistantMcpAccess,
+      );
+    }
+    if (_generalChatFinanceMcpAccess !=
+        newSettings._generalChatFinanceMcpAccess) {
+      await setGeneralChatFinanceMcpAccess(
+        newSettings._generalChatFinanceMcpAccess,
+      );
+    }
   }
 
   SettingsProvider copyWith({
@@ -2400,6 +2454,9 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     int? searchServiceSelected,
     bool? searchEnabled,
     bool? searchAutoTestOnLaunch,
+    bool? mcpEnabled,
+    bool? financeAssistantMcpAccess,
+    bool? generalChatFinanceMcpAccess,
   }) {
     final copy = SettingsProvider();
     copy._searchServices = searchServices ?? _searchServices;
@@ -2409,6 +2466,11 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     copy._searchEnabled = searchEnabled ?? _searchEnabled;
     copy._searchAutoTestOnLaunch =
         searchAutoTestOnLaunch ?? _searchAutoTestOnLaunch;
+    copy._mcpEnabled = mcpEnabled ?? _mcpEnabled;
+    copy._financeAssistantMcpAccess =
+        financeAssistantMcpAccess ?? _financeAssistantMcpAccess;
+    copy._generalChatFinanceMcpAccess =
+        generalChatFinanceMcpAccess ?? _generalChatFinanceMcpAccess;
     // Copy other fields
     copy._providersOrder = _providersOrder;
     copy._themeMode = _themeMode;

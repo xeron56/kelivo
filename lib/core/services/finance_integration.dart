@@ -36,6 +36,7 @@ import 'package:finance_tracker/utils/app_logger.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:finance_tracker/main.dart' as fn_main;
 import '../../features/home/services/finance_context_service.dart';
+import 'mcp/finance/finance_mcp_runtime_service.dart';
 
 class FinanceIntegration {
   static Future<List<SingleChildWidget>> init() async {
@@ -154,6 +155,13 @@ class FinanceIntegration {
           accountsRepository: context.read<AccountsDriftRepository>(),
           appViewmodel: context.read<AppViewmodel>(),
         ),
+      ),
+      Provider<FinanceMcpRuntimeService>(
+        create: (context) => FinanceMcpRuntimeService(
+          database: context.read<AppDriftDatabase>(),
+          appViewmodel: context.read<AppViewmodel>(),
+        ),
+        dispose: (context, runtime) => runtime.dispose(),
       ),
     ];
   }

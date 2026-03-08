@@ -1,7 +1,6 @@
 import 'dart:io' show File, Platform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:characters/characters.dart';
 import '../shared/widgets/emoji_text.dart';
 import '../l10n/app_localizations.dart';
 import '../core/providers/user_provider.dart';
@@ -20,14 +19,17 @@ class DesktopNavRail extends StatelessWidget {
     required this.onTapStorage,
     required this.onTapSettings,
     required this.onTapFinance,
+    required this.onTapFinanceAssistant,
   });
 
-  final int activeIndex; // 0=Chat, 1=Translate, 2=Storage, 3=Settings
+  final int
+  activeIndex; // 0=Chat,1=Translate,2=Storage,3=Settings,4=Finance,5=Finance Assistant
   final VoidCallback onTapChat;
   final VoidCallback onTapTranslate;
   final VoidCallback onTapStorage;
   final VoidCallback onTapSettings;
   final VoidCallback onTapFinance;
+  final VoidCallback onTapFinanceAssistant;
 
   static const double width = 64.0;
 
@@ -42,6 +44,7 @@ class DesktopNavRail extends StatelessWidget {
     final isStorageActive = activeIndex == 2;
     final isSettingsActive = activeIndex == 3;
     final isFinanceActive = activeIndex == 4;
+    final isFinanceAssistantActive = activeIndex == 5;
 
     return Container(
       width: width,
@@ -85,6 +88,15 @@ class DesktopNavRail extends StatelessWidget {
             size: 40,
             iconSize: 18,
             iconColor: isFinanceActive ? cs.primary : null,
+          ),
+          const SizedBox(height: 8),
+          _CircleAction(
+            tooltip: "Finance Assistant",
+            icon: lucide.Lucide.Bot,
+            onTap: onTapFinanceAssistant,
+            size: 40,
+            iconSize: 18,
+            iconColor: isFinanceAssistantActive ? cs.primary : null,
           ),
           const Spacer(),
           _ThemeCycleButton(),
