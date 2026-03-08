@@ -6,6 +6,7 @@ import '../../../core/providers/assistant_provider.dart';
 import '../../../core/providers/mcp_provider.dart';
 import '../../../core/providers/memory_provider.dart';
 import '../../../core/providers/settings_provider.dart';
+import '../../../core/services/mcp/finance/finance_mcp_runtime_service.dart';
 import '../../../core/services/mcp/mcp_tool_service.dart';
 import '../../../core/services/search/search_tool_service.dart';
 
@@ -245,8 +246,35 @@ class ToolHandlerService {
     required String providerKey,
     required bool supportsTools,
   }) {
-    if (!supportsTools) return [];
+    if (!supportsTools || !settings.mcpEnabled) return [];
 
+    final providerCfg = settings.getProviderConfig(providerKey);
+    final providerKind = ProviderConfig.classify(
+      providerCfg.id,
+      explicitType: providerCfg.providerType,
+    );
+
+    final List<Map<String, dynamic>> defs = <Map<String, dynamic>>[];
+    defs.addAll(
+      _buildExternalMcpToolDefinitions(
+        providerKind: providerKind,
+        assistant: assistant,
+      ),
+    );
+    defs.addAll(
+      _buildFinanceMcpToolDefinitions(
+        settings: settings,
+        assistant: assistant,
+        providerKind: providerKind,
+      ),
+    );
+    return defs;
+  }
+
+  List<Map<String, dynamic>> _buildExternalMcpToolDefinitions({
+    required ProviderKind providerKind,
+    required Assistant? assistant,
+  }) {
     final mcp = contextProvider.read<McpProvider>();
     final toolSvc = contextProvider.read<McpToolService>();
     final tools = toolSvc.listAvailableToolsForAssistant(
@@ -255,13 +283,7 @@ class ToolHandlerService {
       assistant?.id,
     );
 
-    if (tools.isEmpty) return [];
-
-    final providerCfg = settings.getProviderConfig(providerKey);
-    final providerKind = ProviderConfig.classify(
-      providerCfg.id,
-      explicitType: providerCfg.providerType,
-    );
+    if (tools.isEmpty) return const <Map<String, dynamic>>[];
 
     return tools.map((t) {
       Map<String, dynamic> baseSchema;
@@ -295,6 +317,37 @@ class ToolHandlerService {
     }).toList();
   }
 
+  List<Map<String, dynamic>> _buildFinanceMcpToolDefinitions({
+    required SettingsProvider settings,
+    required Assistant? assistant,
+    required ProviderKind providerKind,
+  }) {
+    if (!_isFinanceMcpAllowed(settings, assistant)) {
+      return const <Map<String, dynamic>>[];
+    }
+    final runtime = _financeRuntimeOrNull();
+    if (runtime == null) {
+      return const <Map<String, dynamic>>[];
+    }
+
+    return FinanceMcpRuntimeService.toolSpecs
+        .map((FinanceMcpToolSpec spec) {
+          final sanitized = sanitizeToolParametersForProvider(
+            spec.inputSchema,
+            providerKind,
+          );
+          return <String, dynamic>{
+            'type': 'function',
+            'function': <String, dynamic>{
+              'name': spec.name,
+              'description': spec.description,
+              'parameters': sanitized,
+            },
+          };
+        })
+        .toList(growable: false);
+  }
+
   // ============================================================================
   // Tool Call Handler
   // ============================================================================
@@ -315,6 +368,8 @@ class ToolHandlerService {
     // Capture AssistantProvider reference before async gap to avoid
     // use_build_context_synchronously warning
     final assistantProvider = contextProvider.read<AssistantProvider>();
+    final financeRuntime = _financeRuntimeOrNull();
+    final financeAllowed = _isFinanceMcpAllowed(settings, assistant);
 
     return (name, args) async {
       // Search tool
@@ -327,6 +382,18 @@ class ToolHandlerService {
       final memoryResult = await _handleMemoryToolCall(name, args, assistant);
       if (memoryResult != null) {
         return memoryResult;
+      }
+
+      // Finance MCP tools (local mcp_sdk runtime)
+      if (financeRuntime != null && financeRuntime.supportsTool(name)) {
+        if (!settings.mcpEnabled || !financeAllowed) {
+          return '';
+        }
+        return financeRuntime.callToolText(name, args);
+      }
+
+      if (!settings.mcpEnabled) {
+        return '';
       }
 
       // MCP tools
@@ -376,5 +443,23 @@ class ToolHandlerService {
     }
 
     return null;
+  }
+
+  FinanceMcpRuntimeService? _financeRuntimeOrNull() {
+    try {
+      return contextProvider.read<FinanceMcpRuntimeService>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _isFinanceMcpAllowed(SettingsProvider settings, Assistant? assistant) {
+    if (!settings.mcpEnabled) return false;
+    final assistants = contextProvider.read<AssistantProvider>();
+    final isFinanceAssistant = assistants.isFinanceAssistantId(assistant?.id);
+    if (isFinanceAssistant) {
+      return settings.financeAssistantMcpAccess;
+    }
+    return settings.generalChatFinanceMcpAccess;
   }
 }
