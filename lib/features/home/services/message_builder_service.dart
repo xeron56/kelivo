@@ -17,7 +17,6 @@ import '../../../core/services/search/search_tool_service.dart';
 import '../../../core/providers/instruction_injection_provider.dart';
 import '../../../core/services/api/builtin_tools.dart';
 import '../../../utils/markdown_media_sanitizer.dart';
-import 'finance_context_service.dart';
 
 /// Service for building API messages from conversation state.
 ///
@@ -36,7 +35,6 @@ class MessageBuilderService {
     required this.contextProvider,
     this.ocrHandler,
     this.geminiThoughtSignatureHandler,
-    this.financeContextService,
   });
 
   final ChatService chatService;
@@ -53,8 +51,6 @@ class MessageBuilderService {
   /// Handler to append Gemini thought signatures for API calls
   final String Function(ChatMessage message, String content)?
   geminiThoughtSignatureHandler;
-
-  final FinanceContextService? financeContextService;
 
   /// Collapse message versions to show only selected version per group.
   List<ChatMessage> collapseVersions(
@@ -469,19 +465,6 @@ class MessageBuilderService {
       final prompt = SearchToolService.getSystemPrompt();
       _appendToSystemMessage(apiMessages, prompt);
     }
-  }
-
-  /// Inject finance context
-  Future<void> injectFinanceContext(
-    List<Map<String, dynamic>> apiMessages,
-  ) async {
-    if (financeContextService == null) return;
-    try {
-      final context = await financeContextService!.getFinanceContext();
-      if (context.isNotEmpty) {
-        _appendToSystemMessage(apiMessages, context);
-      }
-    } catch (_) {}
   }
 
   /// Inject instruction injection prompts into apiMessages.
