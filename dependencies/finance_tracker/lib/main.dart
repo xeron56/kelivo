@@ -172,7 +172,9 @@ Future<Widget> createFinanceTrackerApp() async {
 }
 
 class FinanceTrackerApp extends StatelessWidget {
-  const FinanceTrackerApp({super.key});
+  const FinanceTrackerApp({super.key, this.embeddedInHost = false});
+
+  final bool embeddedInHost;
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +208,10 @@ class FinanceTrackerApp extends StatelessWidget {
               widget: viewmodel.selectedProfile == null
                   // If the user hasn't yet created a profile, they are forwarded to ProfileEntryScreen
                   ? const ProfileEntryScreen()
-                  : MainScreen(profile: viewmodel.selectedProfile!),
+                  : MainScreen(
+                      profile: viewmodel.selectedProfile!,
+                      embeddedInHost: embeddedInHost,
+                    ),
               resetErrorTextFn: () {
                 viewmodel.resetErrorText();
               },

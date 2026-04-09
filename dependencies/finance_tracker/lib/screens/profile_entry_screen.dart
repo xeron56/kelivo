@@ -277,6 +277,21 @@ class ProfileForm extends StatelessWidget {
                         } else {
                           Navigator.pop(context);
                         }
+                      } else if (context.mounted && viewmodel.errorText.isNotEmpty) {
+                        await showDialog<void>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Save failed'),
+                            content: Text(viewmodel.errorText),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                        viewmodel.resetErrorText();
                       }
                     }
                   },

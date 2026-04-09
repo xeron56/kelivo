@@ -184,7 +184,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                     key: const ValueKey('settings_page'),
                     initialProviderKey: widget.initialProviderKey,
                   ),
-                  const FinanceTrackerApp(),
+                  const FinanceTrackerApp(embeddedInHost: true),
                 ],
               ),
             ),

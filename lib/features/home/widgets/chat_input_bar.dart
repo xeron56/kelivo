@@ -7,7 +7,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../../../shared/responsive/breakpoints.dart';
 import 'dart:async';
@@ -80,6 +79,10 @@ class ChatInputBar extends StatefulWidget {
     this.showOcrButton = false,
     this.ocrActive = false,
     this.onToggleOcr,
+    this.onSpeechToText,
+    this.speechToTextEnabled = false,
+    this.speechToTextRecording = false,
+    this.speechToTextTranscribing = false,
   });
 
   final ValueChanged<ChatInputData>? onSend;
@@ -119,6 +122,10 @@ class ChatInputBar extends StatefulWidget {
   final bool showOcrButton;
   final bool ocrActive;
   final VoidCallback? onToggleOcr;
+  final VoidCallback? onSpeechToText;
+  final bool speechToTextEnabled;
+  final bool speechToTextRecording;
+  final bool speechToTextTranscribing;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -889,6 +896,31 @@ class _ChatInputBarState extends State<ChatInputBar> with WidgetsBindingObserver
               icon: Lucide.Zap,
               label: l10n.chatInputBarQuickPhraseTooltip,
               onTap: widget.onQuickPhrase,
+            ),
+          ));
+        }
+
+        if (widget.speechToTextEnabled && widget.onSpeechToText != null) {
+          final recording = widget.speechToTextRecording;
+          final transcribing = widget.speechToTextTranscribing;
+          final icon = transcribing
+              ? Lucide.Loader
+              : (recording ? Lucide.Square : Lucide.AudioWaveform);
+          final tooltip = transcribing
+              ? 'Transcribing'
+              : (recording ? 'Stop recording' : 'Speech-to-text');
+          actions.add(_OverflowAction(
+            width: normalButtonW,
+            builder: () => _CompactIconButton(
+              tooltip: tooltip,
+              icon: icon,
+              active: recording || transcribing,
+              onTap: transcribing ? null : widget.onSpeechToText,
+            ),
+            menu: DesktopContextMenuItem(
+              icon: icon,
+              label: tooltip,
+              onTap: transcribing ? null : widget.onSpeechToText,
             ),
           ));
         }

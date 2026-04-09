@@ -41,9 +41,11 @@ import '../../../core/providers/tag_provider.dart';
 import '../../assistant/pages/tags_manager_page.dart';
 import '../../assistant/widgets/tags_manager_dialog.dart';
 import '../../assistant/widgets/assistant_select_sheet.dart';
+import '../../planner/pages/daily_planner_page.dart';
 import '../../../desktop/hotkeys/sidebar_tab_bus.dart';
 import 'dart:async';
 
+import 'package:finance_tracker/finance_tracker.dart';
 import 'package:finance_tracker/viewmodels/app_viewmodel.dart' as finance_vm;
 import 'package:finance_tracker/screens/main_screen.dart' as finance_main;
 import 'package:finance_tracker/screens/profile_entry_screen.dart'
@@ -1356,6 +1358,14 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                 }(),
               ),
 
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: _buildPlannerLauncherCard(context, cs, textBase),
+              ),
+
               // Finance Profile Card (Integrated)
               if (!_isDesktop || !widget.embedded)
                 Padding(
@@ -1375,112 +1385,154 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          const SizedBox(width: 6),
-                          // 用户头像（可点击更换）—移除水波纹
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => _editAvatar(context),
-                            child: avatarWidget(
-                              widget.userName,
-                              context.watch<UserProvider>(),
-                              size: 40,
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          // 用户名称（可点击编辑，垂直居中）
-                          Expanded(
-                            child: IosCardPress(
-                              borderRadius: BorderRadius.circular(6),
-                              baseColor: Colors.transparent,
-                              onTap: () => _editUserName(context),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 0,
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final bool compact = constraints.maxWidth < 310;
+                          final double avatarSize = compact ? 36 : 40;
+                          final double actionSlot = compact ? 38 : 45;
+                          final double iconSize = compact ? 20 : 22;
+                          final EdgeInsets iconPadding = EdgeInsets.all(
+                            compact ? 8 : 10,
+                          );
+                          final double avatarGap = compact ? 12 : 20;
+                          final double midGap = compact ? 6 : 8;
+                          final double actionGap = compact ? 2 : 4;
+
+                          return Row(
+                            children: [
+                              const SizedBox(width: 6),
+                              // 用户头像（可点击更换）—移除水波纹
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _editAvatar(context),
+                                child: avatarWidget(
+                                  widget.userName,
+                                  context.watch<UserProvider>(),
+                                  size: avatarSize,
+                                ),
                               ),
-                              child: SizedBox(
-                                height: 45,
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    widget.userName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: _isDesktop ? 14 : 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: textBase,
+                              SizedBox(width: avatarGap),
+                              // 用户名称（可点击编辑，垂直居中）
+                              Expanded(
+                                child: IosCardPress(
+                                  borderRadius: BorderRadius.circular(6),
+                                  baseColor: Colors.transparent,
+                                  onTap: () => _editUserName(context),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 0,
+                                  ),
+                                  child: SizedBox(
+                                    height: 45,
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        widget.userName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: compact
+                                              ? 14
+                                              : (_isDesktop ? 14 : 16),
+                                          fontWeight: FontWeight.w700,
+                                          color: textBase,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // 翻译按钮（圆形，无水波纹）
-                          SizedBox(
-                            width: 45,
-                            height: 45,
-                            child: Center(
-                              child: IosIconButton(
-                                size: 22,
-                                color: textBase,
-                                icon: Lucide.Languages,
-                                padding: const EdgeInsets.all(10),
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => const TranslatePage(),
-                                    ),
-                                  );
-                                },
+                              SizedBox(width: midGap),
+                              // 翻译按钮（圆形，无水波纹）
+                              SizedBox(
+                                width: actionSlot,
+                                height: actionSlot,
+                                child: Center(
+                                  child: IosIconButton(
+                                    size: iconSize,
+                                    color: textBase,
+                                    icon: Lucide.Languages,
+                                    padding: iconPadding,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => const TranslatePage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          // Theme Toggle (replacing separate Finance button)
-                          SizedBox(
-                            width: 45,
-                            height: 45,
-                            child: Center(
-                              child: IosIconButton(
-                                size: 22,
-                                color: textBase,
-                                icon: isDark ? Lucide.Sun : Lucide.Moon,
-                                padding: const EdgeInsets.all(10),
-                                onTap: () {
-                                  final sp = context.read<SettingsProvider>();
-                                  if (sp.themeMode == ThemeMode.dark) {
-                                    sp.setThemeMode(ThemeMode.light);
-                                  } else {
-                                    sp.setThemeMode(ThemeMode.dark);
-                                  }
-                                },
+                              SizedBox(width: actionGap),
+                              // Finance button
+                              SizedBox(
+                                width: actionSlot,
+                                height: actionSlot,
+                                child: Center(
+                                  child: IosIconButton(
+                                    size: iconSize,
+                                    color: textBase,
+                                    icon: Lucide.Wallet,
+                                    padding: iconPadding,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const FinanceTrackerApp(
+                                                embeddedInHost: true,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          // 设置按钮（圆形，无水波纹）
-                          SizedBox(
-                            width: 45,
-                            height: 45,
-                            child: Center(
-                              child: IosIconButton(
-                                size: 22,
-                                color: textBase,
-                                icon: Lucide.Settings,
-                                padding: const EdgeInsets.all(10),
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => const SettingsPage(),
-                                    ),
-                                  );
-                                },
+                              SizedBox(width: actionGap),
+                              // Theme Toggle (replacing separate Finance button)
+                              SizedBox(
+                                width: actionSlot,
+                                height: actionSlot,
+                                child: Center(
+                                  child: IosIconButton(
+                                    size: iconSize,
+                                    color: textBase,
+                                    icon: isDark ? Lucide.Sun : Lucide.Moon,
+                                    padding: iconPadding,
+                                    onTap: () {
+                                      final sp = context
+                                          .read<SettingsProvider>();
+                                      if (sp.themeMode == ThemeMode.dark) {
+                                        sp.setThemeMode(ThemeMode.light);
+                                      } else {
+                                        sp.setThemeMode(ThemeMode.dark);
+                                      }
+                                    },
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
+                              SizedBox(width: actionGap),
+                              // 设置按钮（圆形，无水波纹）
+                              SizedBox(
+                                width: actionSlot,
+                                height: actionSlot,
+                                child: Center(
+                                  child: IosIconButton(
+                                    size: iconSize,
+                                    color: textBase,
+                                    icon: Lucide.Settings,
+                                    padding: iconPadding,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => const SettingsPage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -1758,6 +1810,74 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPlannerLauncherCard(
+    BuildContext context,
+    ColorScheme cs,
+    Color textBase,
+  ) {
+    final dateLabel = DateFormat('EEE, MMM d').format(DateTime.now());
+
+    return Card(
+      elevation: 0,
+      color: cs.secondaryContainer.withOpacity(0.6),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
+        side: BorderSide(color: cs.outlineVariant.withOpacity(0.45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: cs.secondary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Icon(Lucide.Calendar, color: cs.secondary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Daily Planner',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: textBase,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    dateLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: textBase.withOpacity(0.68),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.tonalIcon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const DailyPlannerPage()),
+                );
+              },
+              icon: const Icon(Icons.open_in_new, size: 16),
+              label: const Text('Open'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

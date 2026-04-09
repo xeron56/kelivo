@@ -9,6 +9,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   hotkey_manager_linux
   irondash_engine_context
+  isar_flutter_libs
+  record_linux
   screen_retriever_linux
   sqlite3_flutter_libs
   super_native_extensions

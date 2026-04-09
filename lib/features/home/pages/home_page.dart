@@ -17,8 +17,12 @@ import '../../../core/providers/instruction_injection_provider.dart';
 import '../../../core/models/quick_phrase.dart';
 import '../../../core/models/chat_message.dart';
 import '../../../core/services/android_process_text.dart';
+import '../../../core/services/api/groq_speech_to_text_service.dart';
 import '../../../utils/sandbox_path_resolver.dart';
 import '../../../utils/platform_utils.dart';
+import '../../../shared/widgets/snackbar.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import '../../../desktop/search_provider_popover.dart';
 import '../../../desktop/reasoning_budget_popover.dart';
 import '../../../desktop/mcp_servers_popover.dart';
@@ -70,6 +74,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _inputBarKey = GlobalKey();
   StreamSubscription<String>? _processTextSub;
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final GroqSpeechToTextService _speechToTextService = GroqSpeechToTextService();
+  bool _speechToTextRecording = false;
+  bool _speechToTextTranscribing = false;
 
   // ============================================================================
   // Page Controller (manages all business logic and state)
@@ -134,6 +142,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   void dispose() {
     try { WidgetsBinding.instance.removeObserver(this); } catch (_) {}
     _processTextSub?.cancel();
+    try { unawaited(_audioRecorder.dispose()); } catch (_) {}
     _controller.removeListener(_onControllerChanged);
     _drawerController.removeListener(_onDrawerValueChanged);
     _inputFocus.dispose();
@@ -193,6 +202,145 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       _controller.forceScrollToBottomSoon(animate: false);
       _inputFocus.requestFocus();
     });
+  }
+
+  Future<void> _toggleSpeechToText() async {
+    if (_speechToTextTranscribing) return;
+
+    final settings = context.read<SettingsProvider>();
+    final assistant = context.read<AssistantProvider>().currentAssistant;
+    final cfg = getActiveProviderConfig(settings, assistant: assistant);
+    if (cfg == null) {
+      showAppSnackBar(
+        context,
+        message: 'No provider is configured for speech-to-text.',
+        type: NotificationType.warning,
+      );
+      return;
+    }
+
+    final isGroq = ProviderConfig.classify(cfg.id, explicitType: cfg.providerType) == ProviderKind.groq;
+    if (!isGroq) {
+      showAppSnackBar(
+        context,
+        message: 'Speech-to-text is only supported with Groq provider.',
+        type: NotificationType.warning,
+      );
+      return;
+    }
+
+    if (!(cfg.speechToTextEnabled ?? false)) {
+      showAppSnackBar(
+        context,
+        message: 'Enable Speech-to-Text in Groq provider settings first.',
+        type: NotificationType.info,
+      );
+      return;
+    }
+
+    if (!_speechToTextRecording) {
+      try {
+        final hasPermission = await _audioRecorder.hasPermission();
+        if (!hasPermission) {
+          if (!mounted) return;
+          showAppSnackBar(
+            context,
+            message: 'Microphone permission is required for speech input.',
+            type: NotificationType.warning,
+          );
+          return;
+        }
+
+        final tempDir = await getTemporaryDirectory();
+        final path = '${tempDir.path}/kelivo_stt_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+        if (!mounted) return;
+        setState(() => _speechToTextRecording = true);
+      } catch (e) {
+        if (!mounted) return;
+        showAppSnackBar(
+          context,
+          message: 'Unable to start recording: $e',
+          type: NotificationType.error,
+        );
+      }
+      return;
+    }
+
+    String? audioPath;
+    try {
+      audioPath = await _audioRecorder.stop();
+    } catch (_) {}
+
+    if (!mounted) return;
+    setState(() {
+      _speechToTextRecording = false;
+      _speechToTextTranscribing = true;
+    });
+
+    try {
+      if (audioPath == null || audioPath.trim().isEmpty) {
+        throw Exception('No recording file was produced.');
+      }
+
+      final transcript = await _speechToTextService.transcribeFile(
+        config: cfg,
+        audioPath: audioPath,
+        model: cfg.speechToTextModel,
+      );
+      if (!mounted) return;
+      _insertTextAtCursor(transcript.trim());
+      _inputFocus.requestFocus();
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        message: 'Speech-to-text failed: $e',
+        type: NotificationType.error,
+      );
+    } finally {
+      try {
+        if (audioPath != null && audioPath.isNotEmpty) {
+          final f = File(audioPath);
+          if (await f.exists()) {
+            await f.delete();
+          }
+        }
+      } catch (_) {}
+      if (mounted) {
+        setState(() => _speechToTextTranscribing = false);
+      }
+    }
+  }
+
+  void _insertTextAtCursor(String text) {
+    if (text.trim().isEmpty) return;
+    final value = _inputController.value;
+    final selection = value.selection;
+    if (!selection.isValid) {
+      final nextText = value.text.isEmpty ? text : '${value.text} $text';
+      _inputController.value = value.copyWith(
+        text: nextText,
+        selection: TextSelection.collapsed(offset: nextText.length),
+        composing: TextRange.empty,
+      );
+      return;
+    }
+
+    final start = selection.start;
+    final end = selection.end;
+    final prefix = value.text.substring(0, start);
+    final suffix = value.text.substring(end);
+    final needsLeadingSpace = prefix.isNotEmpty && !RegExp(r'\s$').hasMatch(prefix);
+    final needsTrailingSpace = suffix.isNotEmpty && !RegExp(r'^\s').hasMatch(suffix);
+    final insert = '${needsLeadingSpace ? ' ' : ''}$text${needsTrailingSpace ? ' ' : ''}';
+    final next = value.text.replaceRange(start, end, insert);
+
+    _inputController.value = value.copyWith(
+      text: next,
+      selection: TextSelection.collapsed(offset: start + insert.length),
+      composing: TextRange.empty,
+    );
   }
 
   // ============================================================================
@@ -575,6 +723,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildChatInputBar(BuildContext context, {required bool isTablet}) {
+    final settings = context.watch<SettingsProvider>();
+    final assistant = context.watch<AssistantProvider>().currentAssistant;
+    final activeCfg = getActiveProviderConfig(settings, assistant: assistant);
+    final activeIsGroq = activeCfg != null &&
+        ProviderConfig.classify(activeCfg.id, explicitType: activeCfg.providerType) == ProviderKind.groq;
+    final sttEnabled = activeIsGroq && (activeCfg.speechToTextEnabled ?? false);
+
     return ChatInputSection(
       inputBarKey: _inputBarKey,
       inputFocus: _inputFocus,
@@ -659,6 +814,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       onToggleLearningMode: _openInstructionInjectionPopover,
       onLongPressLearning: _showLearningPromptSheet,
       onClearContext: _controller.clearContext,
+      onSpeechToText: _toggleSpeechToText,
+      speechToTextEnabled: sttEnabled,
+      speechToTextRecording: _speechToTextRecording,
+      speechToTextTranscribing: _speechToTextTranscribing,
     );
   }
 

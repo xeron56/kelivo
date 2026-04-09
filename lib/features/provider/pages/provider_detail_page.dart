@@ -10,7 +10,6 @@ import '../../../core/providers/settings_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../icons/lucide_adapter.dart';
-import '../../../core/providers/settings_provider.dart';
 import '../../../core/providers/model_provider.dart';
 import '../../../core/providers/assistant_provider.dart';
 import '../../model/widgets/model_detail_sheet.dart';
@@ -72,6 +71,8 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
   String? _currentDetectingModel;
   final Set<String> _pendingModels = {};
   bool _aihubmixAppCodeEnabled = false;
+  bool _speechToTextEnabled = false;
+  String _speechToTextModel = 'whisper-large-v3-turbo';
 
   @override
   void initState() {
@@ -97,6 +98,8 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
     _proxyPassCtrl.text = _cfg.proxyPassword ?? '';
     _multiKeyEnabled = _cfg.multiKeyEnabled ?? false;
     _aihubmixAppCodeEnabled = _cfg.aihubmixAppCodeEnabled ?? false;
+    _speechToTextEnabled = _cfg.speechToTextEnabled ?? false;
+    _speechToTextModel = _cfg.speechToTextModel ?? 'whisper-large-v3-turbo';
   }
 
   @override
@@ -618,6 +621,12 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
               helpText: l10n.providerDetailPageAihubmixAppCodeHelp,
               trailing: IosSwitch(value: _aihubmixAppCodeEnabled, onChanged: (v) { setState(() => _aihubmixAppCodeEnabled = v); _save(); }),
             ),
+          if (_kind == ProviderKind.groq)
+            _iosRow(
+              context,
+              label: 'Speech-to-Text',
+              trailing: IosSwitch(value: _speechToTextEnabled, onChanged: (v) { setState(() => _speechToTextEnabled = v); _save(); }),
+            ),
           _TactileRow(
             onTap: () async {
               await Navigator.of(context).push(
@@ -731,6 +740,53 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
               onChanged: (_) => _save(),
             ),
           ],
+        ],
+        if (_kind == ProviderKind.groq && _speechToTextEnabled) ...[
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 6),
+            child: Text('Speech Model', style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.8))),
+          ),
+          _iosSectionCard(
+            children: [
+              _TactileRow(
+                onTap: () {
+                  setState(() => _speechToTextModel = 'whisper-large-v3-turbo');
+                  _save();
+                },
+                builder: (pressed) {
+                  final selected = _speechToTextModel == 'whisper-large-v3-turbo';
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('whisper-large-v3-turbo', style: TextStyle(fontSize: 15))),
+                        if (selected) Icon(Icons.check, color: Theme.of(context).colorScheme.primary),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              _TactileRow(
+                onTap: () {
+                  setState(() => _speechToTextModel = 'whisper-large-v3');
+                  _save();
+                },
+                builder: (pressed) {
+                  final selected = _speechToTextModel == 'whisper-large-v3';
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('whisper-large-v3', style: TextStyle(fontSize: 15))),
+                        if (selected) Icon(Icons.check, color: Theme.of(context).colorScheme.primary),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ],
         const SizedBox(height: 12),
         if (widget.keyName.toLowerCase() == 'siliconflow') ...[
@@ -1335,8 +1391,9 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
           return 'Gemini';
         case ProviderKind.claude:
           return 'Claude';
+        case ProviderKind.groq:
+          return 'Groq';
         case ProviderKind.openai:
-        default:
           return 'OpenAI';
       }
     }
@@ -1393,6 +1450,7 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
                 _providerKindTile(ctx, ProviderKind.openai, label: 'OpenAI'),
                 _providerKindTile(ctx, ProviderKind.google, label: 'Gemini'),
                 _providerKindTile(ctx, ProviderKind.claude, label: 'Claude'),
+                _providerKindTile(ctx, ProviderKind.groq, label: 'Groq'),
               ],
             ),
           ),
@@ -1462,6 +1520,8 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
       serviceAccountJson: _kind == ProviderKind.google ? _saJsonCtrl.text.trim() : old.serviceAccountJson,
       multiKeyEnabled: _multiKeyEnabled,
       aihubmixAppCodeEnabled: _aihubmixAppCodeEnabled,
+      speechToTextEnabled: _kind == ProviderKind.groq ? _speechToTextEnabled : old.speechToTextEnabled,
+      speechToTextModel: _kind == ProviderKind.groq ? _speechToTextModel : old.speechToTextModel,
       // preserve models and modelOverrides and proxy fields implicitly via copyWith
     );
     await settings.setProviderConfig(widget.keyName, updated);

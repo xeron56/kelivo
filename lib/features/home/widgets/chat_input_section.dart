@@ -58,6 +58,10 @@ class ChatInputSection extends StatelessWidget {
     this.onToggleLearningMode,
     this.onLongPressLearning,
     this.onClearContext,
+    this.onSpeechToText,
+    this.speechToTextEnabled = false,
+    this.speechToTextRecording = false,
+    this.speechToTextTranscribing = false,
   });
 
   final GlobalKey inputBarKey;
@@ -92,6 +96,10 @@ class ChatInputSection extends StatelessWidget {
   final VoidCallback? onToggleLearningMode;
   final VoidCallback? onLongPressLearning;
   final VoidCallback? onClearContext;
+  final VoidCallback? onSpeechToText;
+  final bool speechToTextEnabled;
+  final bool speechToTextRecording;
+  final bool speechToTextTranscribing;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +185,10 @@ class ChatInputSection extends StatelessWidget {
           : false,
       showMoreButton: !isTablet,
       onClearContext: isTablet ? onClearContext : null,
+      onSpeechToText: onSpeechToText,
+      speechToTextEnabled: speechToTextEnabled,
+      speechToTextRecording: speechToTextRecording,
+      speechToTextTranscribing: speechToTextTranscribing,
     );
   }
 

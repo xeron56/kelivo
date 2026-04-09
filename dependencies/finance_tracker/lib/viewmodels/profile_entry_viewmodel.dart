@@ -179,43 +179,56 @@ class ProfileEntryViewmodel extends ChangeNotifier {
       isValid = false;
     }
 
+    final zipValue = (_zip ?? '').trim();
+    if (zipValue.isNotEmpty && zipValue.length < 4) {
+      zipError = "ZIP must be at least 4 characters";
+      isValid = false;
+    }
+
     notifyListeners();
     return isValid;
   }
 
   Future<bool> save() async {
     if (_validate()) {
-      loadingStatus = LoadingStatus.submitting;
-      notifyListeners();
-      if (_profile == null) {
-        int newPro = await _profilesRepository.insertProfile(
-          name: _profileName,
-          alias: _nickName,
-          currency: _currency!,
-          address: _address,
-          zip: _zip,
-          email: _email,
-          phone: _phone,
-          tin: _tin,
-        );
-        _profile = await _profilesRepository.getById(newPro);
-      } else {
-        await _profilesRepository.updateProfile(
-          id: _profile!.dbID,
-          name: _profileName,
-          alias: _nickName,
-          currency: _currency!,
-          address: _address,
-          zip: _zip,
-          email: _email,
-          phone: _phone,
-          tin: _tin,
-        );
-      }
+      try {
+        loadingStatus = LoadingStatus.submitting;
+        notifyListeners();
+        if (_profile == null) {
+          int newPro = await _profilesRepository.insertProfile(
+            name: _profileName,
+            alias: _nickName,
+            currency: _currency!,
+            address: _address,
+            zip: _zip,
+            email: _email,
+            phone: _phone,
+            tin: _tin,
+          );
+          _profile = await _profilesRepository.getById(newPro);
+        } else {
+          await _profilesRepository.updateProfile(
+            id: _profile!.dbID,
+            name: _profileName,
+            alias: _nickName,
+            currency: _currency!,
+            address: _address,
+            zip: _zip,
+            email: _email,
+            phone: _phone,
+            tin: _tin,
+          );
+        }
 
-      loadingStatus = LoadingStatus.submitted;
-      notifyListeners();
-      return true;
+        loadingStatus = LoadingStatus.submitted;
+        notifyListeners();
+        return true;
+      } catch (e) {
+        loadingStatus = LoadingStatus.completed;
+        errorText = _friendlySaveError(e);
+        notifyListeners();
+        return false;
+      }
     }
 
     notifyListeners();
@@ -225,6 +238,24 @@ class ProfileEntryViewmodel extends ChangeNotifier {
   void resetErrorText() {
     errorText = "";
     notifyListeners();
+  }
+
+  String _friendlySaveError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('zip: Must at least be 4 characters long')) {
+      return 'ZIP must be at least 4 characters long.';
+    }
+    if (raw.contains('InvalidDataException')) {
+      final detailsIndex = raw.indexOf('because:');
+      if (detailsIndex != -1 && detailsIndex + 8 < raw.length) {
+        final details = raw.substring(detailsIndex + 8).trim();
+        if (details.isNotEmpty) {
+          return details.replaceAll('•', '').trim();
+        }
+      }
+      return 'Invalid profile data. Please review the form fields.';
+    }
+    return 'Failed to save profile. Please try again.';
   }
 
   /// Get the device's country code

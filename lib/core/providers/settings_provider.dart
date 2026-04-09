@@ -2633,6 +2633,9 @@ class ProviderConfig {
   final KeyManagementConfig? keyManagement;
   // AIhubmix promo header opt-in
   final bool? aihubmixAppCodeEnabled;
+  // Groq Speech-to-Text settings
+  final bool? speechToTextEnabled;
+  final String? speechToTextModel;
 
   ProviderConfig({
     required this.id,
@@ -2660,6 +2663,8 @@ class ProviderConfig {
     this.apiKeys,
     this.keyManagement,
     this.aihubmixAppCodeEnabled,
+    this.speechToTextEnabled,
+    this.speechToTextModel,
   });
 
   // Sentinel for copyWith nullability control (allow explicit null set)
@@ -2691,6 +2696,8 @@ class ProviderConfig {
     List<ApiKeyConfig>? apiKeys,
     KeyManagementConfig? keyManagement,
     bool? aihubmixAppCodeEnabled,
+    bool? speechToTextEnabled,
+    String? speechToTextModel,
   }) => ProviderConfig(
     id: id ?? this.id,
     enabled: enabled ?? this.enabled,
@@ -2722,6 +2729,8 @@ class ProviderConfig {
     keyManagement: keyManagement ?? this.keyManagement,
     aihubmixAppCodeEnabled:
         aihubmixAppCodeEnabled ?? this.aihubmixAppCodeEnabled,
+    speechToTextEnabled: speechToTextEnabled ?? this.speechToTextEnabled,
+    speechToTextModel: speechToTextModel ?? this.speechToTextModel,
   );
 
   Map<String, dynamic> toJson() => {
@@ -2750,6 +2759,8 @@ class ProviderConfig {
     'apiKeys': apiKeys?.map((e) => e.toJson()).toList(),
     'keyManagement': keyManagement?.toJson(),
     'aihubmixAppCodeEnabled': aihubmixAppCodeEnabled,
+    'speechToTextEnabled': speechToTextEnabled,
+    'speechToTextModel': speechToTextModel,
   };
 
   factory ProviderConfig.fromJson(Map<String, dynamic> json) => ProviderConfig(
@@ -2794,6 +2805,8 @@ class ProviderConfig {
       (json['keyManagement'] as Map?)?.cast<String, dynamic>(),
     ),
     aihubmixAppCodeEnabled: json['aihubmixAppCodeEnabled'] as bool?,
+    speechToTextEnabled: json['speechToTextEnabled'] as bool?,
+    speechToTextModel: json['speechToTextModel'] as String?,
   );
 
   static ProviderKind classify(String key, {ProviderKind? explicitType}) {
@@ -2901,6 +2914,8 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: false,
+          speechToTextEnabled: true,
+          speechToTextModel: 'whisper-large-v3-turbo',
         );
       case ProviderKind.google:
         return ProviderConfig(
@@ -2925,6 +2940,8 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: false,
+          speechToTextEnabled: false,
+          speechToTextModel: 'whisper-large-v3-turbo',
         );
       case ProviderKind.claude:
         return ProviderConfig(
@@ -2945,9 +2962,10 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: false,
+          speechToTextEnabled: false,
+          speechToTextModel: 'whisper-large-v3-turbo',
         );
       case ProviderKind.openai:
-      default:
         // Special-case KelivoIN default models and overrides
         if (lowerKey.contains('kelivoin')) {
           return ProviderConfig(
@@ -2994,6 +3012,8 @@ class ProviderConfig {
             apiKeys: const [],
             keyManagement: const KeyManagementConfig(),
             aihubmixAppCodeEnabled: false,
+            speechToTextEnabled: false,
+            speechToTextModel: 'whisper-large-v3-turbo',
           );
         }
         // Special-case SiliconFlow: prefill two partnered models
@@ -3031,6 +3051,8 @@ class ProviderConfig {
             apiKeys: const [],
             keyManagement: const KeyManagementConfig(),
             aihubmixAppCodeEnabled: false,
+            speechToTextEnabled: false,
+            speechToTextModel: 'whisper-large-v3-turbo',
           );
         }
         return ProviderConfig(
@@ -3053,6 +3075,8 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: lowerKey.contains('aihubmix'),
+          speechToTextEnabled: false,
+          speechToTextModel: 'whisper-large-v3-turbo',
         );
     }
   }

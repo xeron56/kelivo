@@ -22,8 +22,13 @@ import 'package:finance_tracker/widgets/shared/loading_body.dart';
 import 'package:path/path.dart' as p;
 
 class MainScreen extends StatelessWidget {
-  const MainScreen({super.key, required this.profile});
+  const MainScreen({
+    super.key,
+    required this.profile,
+    this.embeddedInHost = false,
+  });
   final Profile profile;
+  final bool embeddedInHost;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +69,9 @@ class MainScreen extends StatelessWidget {
             );
             return Scaffold(
               appBar: AppBar(
-                title: Text(AppLocalizations.of(context)!.pursenal),
+                title: Text(
+                  AppLocalizations.of(context)?.pursenal ?? 'Pursenal',
+                ),
                 actions: [
                   Padding(
                     padding: const EdgeInsets.only(right: 2.0),
@@ -317,7 +324,7 @@ class MainScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-              drawer: TheDrawer(viewmodel: viewmodel),
+              drawer: embeddedInHost ? null : TheDrawer(viewmodel: viewmodel),
             );
           },
         ),
