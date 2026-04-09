@@ -121,7 +121,10 @@ class AssistantProvider extends ChangeNotifier {
         'answering. For balance questions, current balance questions, account '
         'balance questions, or funds balance questions, call '
         'get_current_balance before answering. Do not use spending tools for '
-        'balance questions. Explain spending patterns clearly.',
+        'balance questions. When the user wants to add spending or income, use '
+        'get_transaction_entry_options when needed and then use '
+        'create_finance_transaction instead of only describing what to do. '
+        'Explain spending patterns clearly.',
     deletable: false,
     temperature: 0.4,
     topP: null,

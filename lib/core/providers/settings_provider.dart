@@ -313,13 +313,6 @@ class SettingsProvider extends ChangeNotifier {
         );
       } catch (_) {}
     }
-    // Enforce Groq-only: remove any provider that isn't Groq
-    _providerConfigs.removeWhere((k, v) {
-      final isGroq =
-          v.providerType == ProviderKind.groq ||
-          k.toLowerCase().contains('groq');
-      return !isGroq;
-    });
     // load pinned models
     final pinned = prefs.getStringList(_pinnedModelsKey) ?? const <String>[];
     _pinnedModels

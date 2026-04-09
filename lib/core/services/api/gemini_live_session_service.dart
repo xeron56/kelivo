@@ -1,0 +1,556 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io' as io;
+import 'dart:typed_data';
+
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+import '../../providers/settings_provider.dart';
+
+typedef GeminiLiveToolHandler =
+    Future<String> Function(String name, Map<String, dynamic> arguments);
+
+class GeminiLiveSessionService extends ChangeNotifier {
+  GeminiLiveSessionService({
+    required ProviderConfig providerConfig,
+    required String modelId,
+    required String systemInstruction,
+    required List<Map<String, dynamic>> functionDeclarations,
+    required GeminiLiveToolHandler? toolHandler,
+    this.voiceName = 'Zephyr',
+  }) : _providerConfig = providerConfig,
+       _modelId = modelId.startsWith('models/') ? modelId : 'models/$modelId',
+       _systemInstruction = systemInstruction.trim(),
+       _functionDeclarations = List<Map<String, dynamic>>.unmodifiable(
+         functionDeclarations,
+       ),
+       _toolHandler = toolHandler;
+
+  final ProviderConfig _providerConfig;
+  final String _modelId;
+  final String _systemInstruction;
+  final List<Map<String, dynamic>> _functionDeclarations;
+  final GeminiLiveToolHandler? _toolHandler;
+  final String voiceName;
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  WebSocketChannel? _channel;
+  StreamSubscription<dynamic>? _subscription;
+  Completer<void>? _setupCompleter;
+
+  final List<String> _outputAudioParts = <String>[];
+  StringBuffer _textResponseBuffer = StringBuffer();
+  String? _lastAudioFilePath;
+
+  bool _connecting = false;
+  bool _connected = false;
+  bool _awaitingModelTurn = false;
+  String _status = 'Disconnected';
+  String _inputTranscript = '';
+  String _outputTranscript = '';
+  String _lastTextResponse = '';
+  String? _audioMimeType;
+  String? _lastError;
+
+  bool get connecting => _connecting;
+  bool get connected => _connected;
+  bool get awaitingModelTurn => _awaitingModelTurn;
+  String get status => _status;
+  String get inputTranscript => _inputTranscript;
+  String get outputTranscript => _outputTranscript;
+  String get lastTextResponse => _lastTextResponse;
+  String? get lastError => _lastError;
+
+  Future<void> connect() async {
+    if (_connecting || _connected) {
+      return;
+    }
+
+    final String apiKey = _providerConfig.apiKey.trim();
+    if (apiKey.isEmpty) {
+      throw StateError('Gemini API key is missing for the selected provider.');
+    }
+    if (_providerConfig.vertexAI == true) {
+      throw StateError(
+        'Gemini Live is currently wired for Google AI API keys, not Vertex AI service accounts.',
+      );
+    }
+
+    _connecting = true;
+    _status = 'Connecting…';
+    _lastError = null;
+    notifyListeners();
+
+    final Uri uri = Uri.parse(
+      'wss://generativelanguage.googleapis.com/ws/'
+      'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent'
+      '?key=$apiKey',
+    );
+
+    try {
+      _channel = WebSocketChannel.connect(uri);
+      _setupCompleter = Completer<void>();
+      _subscription = _channel!.stream.listen(
+        _handleMessage,
+        onError: (Object error, StackTrace stackTrace) {
+          _lastError = error.toString();
+          _status = 'Connection error';
+          _connected = false;
+          _connecting = false;
+          notifyListeners();
+        },
+        onDone: () {
+          _connected = false;
+          _connecting = false;
+          _awaitingModelTurn = false;
+          _status = 'Disconnected';
+          notifyListeners();
+        },
+      );
+
+      _send(<String, dynamic>{
+        'setup': <String, dynamic>{
+          'model': _modelId,
+          'generationConfig': <String, dynamic>{
+            'responseModalities': <String>['TEXT'],
+            'speechConfig': <String, dynamic>{
+              'voiceConfig': <String, dynamic>{
+                'prebuiltVoiceConfig': <String, dynamic>{
+                  'voiceName': voiceName,
+                },
+              },
+            },
+          },
+          if (_systemInstruction.isNotEmpty)
+            'systemInstruction': <String, dynamic>{
+              'parts': <Map<String, dynamic>>[
+                <String, dynamic>{'text': _systemInstruction},
+              ],
+            },
+          if (_functionDeclarations.isNotEmpty)
+            'tools': <Map<String, dynamic>>[
+              <String, dynamic>{'functionDeclarations': _functionDeclarations},
+            ],
+          'inputAudioTranscription': <String, dynamic>{},
+          'outputAudioTranscription': <String, dynamic>{},
+          'realtimeInputConfig': <String, dynamic>{
+            'automaticActivityDetection': <String, dynamic>{
+              'startOfSpeechSensitivity': 'START_SENSITIVITY_HIGH',
+              'endOfSpeechSensitivity': 'END_SENSITIVITY_HIGH',
+              'silenceDurationMs': 700,
+            },
+          },
+        },
+      });
+
+      await _setupCompleter!.future.timeout(const Duration(seconds: 15));
+      _connected = true;
+      _connecting = false;
+      _status = 'Ready';
+      notifyListeners();
+    } catch (e) {
+      _lastError = e.toString();
+      _status = 'Connection failed';
+      _connected = false;
+      _connecting = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> disconnect() async {
+    try {
+      await _subscription?.cancel();
+    } catch (_) {}
+    _subscription = null;
+    try {
+      await _channel?.sink.close();
+    } catch (_) {}
+    _channel = null;
+    try {
+      await _audioPlayer.stop();
+    } catch (_) {}
+    await _deleteLastAudioFile();
+    _connected = false;
+    _connecting = false;
+    _awaitingModelTurn = false;
+    _status = 'Disconnected';
+    notifyListeners();
+  }
+
+  Future<void> sendTextTurn(String text) async {
+    final String trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    _awaitingModelTurn = true;
+    _status = 'Waiting for Gemini…';
+    _resetResponseBuffers();
+    notifyListeners();
+    _send(<String, dynamic>{
+      'clientContent': <String, dynamic>{
+        'turns': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'role': 'user',
+            'parts': <Map<String, dynamic>>[
+              <String, dynamic>{'text': trimmed},
+            ],
+          },
+        ],
+        'turnComplete': true,
+      },
+    });
+  }
+
+  void sendAudioChunk(Uint8List pcmChunk, {int sampleRate = 16000}) {
+    if (pcmChunk.isEmpty) {
+      return;
+    }
+    _awaitingModelTurn = true;
+    _status = 'Listening…';
+    notifyListeners();
+    _send(<String, dynamic>{
+      'realtimeInput': <String, dynamic>{
+        'audio': <String, dynamic>{
+          'data': base64Encode(pcmChunk),
+          'mimeType': 'audio/pcm;rate=$sampleRate',
+        },
+      },
+    });
+  }
+
+  void endAudioStream() {
+    _status = 'Processing…';
+    notifyListeners();
+    _send(<String, dynamic>{
+      'realtimeInput': <String, dynamic>{'audioStreamEnd': true},
+    });
+  }
+
+  void _handleMessage(dynamic rawMessage) {
+    try {
+      final String messageText = _decodeSocketMessage(rawMessage);
+      final Map<String, dynamic> message =
+          jsonDecode(messageText) as Map<String, dynamic>;
+
+      if (message.containsKey('setupComplete')) {
+        _setupCompleter?.complete();
+        return;
+      }
+
+      if (message['serverContent'] is Map<String, dynamic>) {
+        _handleServerContent(message['serverContent'] as Map<String, dynamic>);
+      }
+
+      if (message['toolCall'] is Map<String, dynamic>) {
+        unawaited(_handleToolCall(message['toolCall'] as Map<String, dynamic>));
+      }
+    } catch (e) {
+      _lastError = e.toString();
+      _status = 'Message error';
+      notifyListeners();
+    }
+  }
+
+  static String _decodeSocketMessage(dynamic rawMessage) {
+    if (rawMessage is String) {
+      return rawMessage;
+    }
+    if (rawMessage is Uint8List) {
+      return utf8.decode(rawMessage);
+    }
+    if (rawMessage is List<int>) {
+      return utf8.decode(rawMessage);
+    }
+    if (rawMessage is ByteBuffer) {
+      return utf8.decode(rawMessage.asUint8List());
+    }
+    throw StateError(
+      'Unsupported Gemini Live message type: ${rawMessage.runtimeType}',
+    );
+  }
+
+  void _handleServerContent(Map<String, dynamic> serverContent) {
+    if (serverContent['interrupted'] == true) {
+      _clearBufferedAudio();
+      unawaited(_audioPlayer.stop());
+      _status = 'Interrupted';
+    }
+
+    final Map<String, dynamic>? inputTranscription = _asMap(
+      serverContent['inputTranscription'],
+    );
+    if (inputTranscription != null) {
+      _inputTranscript = (inputTranscription['text'] ?? '').toString();
+    }
+
+    final Map<String, dynamic>? outputTranscription = _asMap(
+      serverContent['outputTranscription'],
+    );
+    if (outputTranscription != null) {
+      _outputTranscript = (outputTranscription['text'] ?? '').toString();
+    }
+
+    final Map<String, dynamic>? modelTurn = _asMap(serverContent['modelTurn']);
+    if (modelTurn != null) {
+      final List<dynamic> parts =
+          (modelTurn['parts'] as List<dynamic>? ?? const <dynamic>[]);
+      for (final dynamic rawPart in parts) {
+        final Map<String, dynamic>? part = _asMap(rawPart);
+        if (part == null) {
+          continue;
+        }
+        final String text = (part['text'] ?? '').toString();
+        if (text.isNotEmpty) {
+          _textResponseBuffer.write(text);
+          _lastTextResponse = _textResponseBuffer.toString().trim();
+        }
+        final Map<String, dynamic>? inlineData = _asMap(part['inlineData']);
+        if (inlineData != null) {
+          final String data = (inlineData['data'] ?? '').toString();
+          if (data.isNotEmpty) {
+            _outputAudioParts.add(data);
+            _audioMimeType = (inlineData['mimeType'] ?? '').toString();
+          }
+        }
+      }
+    }
+
+    if (serverContent['generationComplete'] == true) {
+      _status = 'Finishing audio…';
+    }
+
+    if (serverContent['turnComplete'] == true) {
+      _awaitingModelTurn = false;
+      _status = 'Ready';
+      unawaited(_playBufferedAudio());
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _handleToolCall(Map<String, dynamic> toolCall) async {
+    final List<dynamic> functionCalls =
+        toolCall['functionCalls'] as List<dynamic>? ?? const <dynamic>[];
+    final GeminiLiveToolHandler? toolHandler = _toolHandler;
+    if (functionCalls.isEmpty || toolHandler == null) {
+      return;
+    }
+
+    final List<Map<String, dynamic>> responses = <Map<String, dynamic>>[];
+    for (final dynamic rawCall in functionCalls) {
+      final Map<String, dynamic>? functionCall = _asMap(rawCall);
+      if (functionCall == null) {
+        continue;
+      }
+
+      final String id = (functionCall['id'] ?? '').toString();
+      final String name = (functionCall['name'] ?? '').toString();
+      final Map<String, dynamic> arguments =
+          _asMap(functionCall['args']) ?? const <String, dynamic>{};
+
+      try {
+        final String rawResult = await toolHandler(name, arguments);
+        responses.add(<String, dynamic>{
+          'id': id,
+          'name': name,
+          'response': _decodeToolResult(rawResult),
+        });
+      } catch (e) {
+        responses.add(<String, dynamic>{
+          'id': id,
+          'name': name,
+          'response': <String, dynamic>{'error': e.toString()},
+        });
+      }
+    }
+
+    if (responses.isEmpty) {
+      return;
+    }
+
+    _send(<String, dynamic>{
+      'toolResponse': <String, dynamic>{'functionResponses': responses},
+    });
+  }
+
+  Object _decodeToolResult(String rawResult) {
+    final String trimmed = rawResult.trim();
+    if (trimmed.isEmpty) {
+      return <String, dynamic>{'ok': true};
+    }
+    try {
+      return jsonDecode(trimmed);
+    } catch (_) {
+      return <String, dynamic>{'text': trimmed};
+    }
+  }
+
+  Future<void> _playBufferedAudio() async {
+    if (_outputAudioParts.isEmpty) {
+      return;
+    }
+    try {
+      final Uint8List wavData = _buildWav(
+        _outputAudioParts,
+        _audioMimeType ?? 'audio/pcm;rate=24000',
+      );
+      await _audioPlayer.stop();
+      await Future.delayed(const Duration(milliseconds: 20));
+      await _deleteLastAudioFile();
+      final io.Directory dir = await getTemporaryDirectory();
+      final String path = p.join(
+        dir.path,
+        'kelivo_gemini_live_${DateTime.now().millisecondsSinceEpoch}.wav',
+      );
+      final io.File file = io.File(path);
+      await file.writeAsBytes(wavData, flush: true);
+      _lastAudioFilePath = path;
+      await _audioPlayer.play(DeviceFileSource(path));
+    } catch (e) {
+      _lastError = 'Audio playback failed: $e';
+      notifyListeners();
+    } finally {
+      _clearBufferedAudio();
+    }
+  }
+
+  void _resetResponseBuffers() {
+    _outputTranscript = '';
+    _inputTranscript = '';
+    _lastTextResponse = '';
+    _textResponseBuffer = StringBuffer();
+    _clearBufferedAudio();
+  }
+
+  void _clearBufferedAudio() {
+    _outputAudioParts.clear();
+    _audioMimeType = null;
+  }
+
+  Future<void> _deleteLastAudioFile() async {
+    final String? path = _lastAudioFilePath;
+    if (path == null || path.isEmpty) {
+      return;
+    }
+    _lastAudioFilePath = null;
+    try {
+      final io.File file = io.File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
+  void _send(Map<String, dynamic> payload) {
+    _channel?.sink.add(jsonEncode(payload));
+  }
+
+  static Map<String, dynamic>? _asMap(Object? value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is Map) {
+      return value.cast<String, dynamic>();
+    }
+    return null;
+  }
+
+  static Uint8List _buildWav(List<String> rawData, String mimeType) {
+    final _WavOptions options = _parseMimeType(mimeType);
+    final List<Uint8List> buffers = rawData
+        .map((String chunk) => Uint8List.fromList(base64Decode(chunk)))
+        .toList(growable: false);
+    final int dataLength = buffers.fold<int>(
+      0,
+      (int total, Uint8List chunk) => total + chunk.length,
+    );
+    final BytesBuilder builder = BytesBuilder(copy: false);
+    builder.add(_createWavHeader(dataLength, options));
+    for (final Uint8List chunk in buffers) {
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  }
+
+  static _WavOptions _parseMimeType(String mimeType) {
+    final List<String> sections = mimeType.split(';');
+    int sampleRate = 24000;
+    int bitsPerSample = 16;
+
+    for (final String rawSection in sections.skip(1)) {
+      final List<String> kv = rawSection.split('=');
+      if (kv.length != 2) {
+        continue;
+      }
+      final String key = kv.first.trim();
+      final String value = kv.last.trim();
+      if (key == 'rate') {
+        sampleRate = int.tryParse(value) ?? sampleRate;
+      }
+    }
+
+    final String format = sections.first.trim().split('/').last;
+    if (format.startsWith('L')) {
+      bitsPerSample = int.tryParse(format.substring(1)) ?? bitsPerSample;
+    }
+
+    return _WavOptions(
+      numChannels: 1,
+      sampleRate: sampleRate,
+      bitsPerSample: bitsPerSample,
+    );
+  }
+
+  static Uint8List _createWavHeader(int dataLength, _WavOptions options) {
+    final ByteData header = ByteData(44);
+    final int byteRate =
+        options.sampleRate * options.numChannels * options.bitsPerSample ~/ 8;
+    final int blockAlign = options.numChannels * options.bitsPerSample ~/ 8;
+
+    void writeAscii(int offset, String value) {
+      for (int i = 0; i < value.length; i++) {
+        header.setUint8(offset + i, value.codeUnitAt(i));
+      }
+    }
+
+    writeAscii(0, 'RIFF');
+    header.setUint32(4, 36 + dataLength, Endian.little);
+    writeAscii(8, 'WAVE');
+    writeAscii(12, 'fmt ');
+    header.setUint32(16, 16, Endian.little);
+    header.setUint16(20, 1, Endian.little);
+    header.setUint16(22, options.numChannels, Endian.little);
+    header.setUint32(24, options.sampleRate, Endian.little);
+    header.setUint32(28, byteRate, Endian.little);
+    header.setUint16(32, blockAlign, Endian.little);
+    header.setUint16(34, options.bitsPerSample, Endian.little);
+    writeAscii(36, 'data');
+    header.setUint32(40, dataLength, Endian.little);
+    return header.buffer.asUint8List();
+  }
+
+  @override
+  void dispose() {
+    unawaited(disconnect());
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+}
+
+class _WavOptions {
+  const _WavOptions({
+    required this.numChannels,
+    required this.sampleRate,
+    required this.bitsPerSample,
+  });
+
+  final int numChannels;
+  final int sampleRate;
+  final int bitsPerSample;
+}

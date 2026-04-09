@@ -12,6 +12,7 @@ import '../../../shared/responsive/breakpoints.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/providers/assistant_provider.dart';
+import '../../../core/models/assistant.dart';
 import '../../../core/providers/quick_phrase_provider.dart';
 import '../../../core/providers/instruction_injection_provider.dart';
 import '../../../core/models/quick_phrase.dart';
@@ -35,6 +36,7 @@ import '../../search/widgets/search_settings_sheet.dart';
 import '../../model/widgets/model_select_sheet.dart';
 import '../../mcp/pages/mcp_page.dart';
 import '../../provider/pages/providers_page.dart';
+import '../../assistant/pages/gemini_live_page.dart';
 import '../../assistant/widgets/mcp_assistant_sheet.dart';
 import '../../quick_phrase/pages/quick_phrases_page.dart';
 import '../../quick_phrase/widgets/quick_phrase_menu.dart';
@@ -52,7 +54,6 @@ import '../controllers/home_page_controller.dart';
 import 'home_mobile_layout.dart';
 import 'home_desktop_layout.dart';
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -60,13 +61,15 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin, RouteAware, WidgetsBindingObserver {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin, RouteAware, WidgetsBindingObserver {
   // ============================================================================
   // UI Controllers (owned by State for lifecycle management)
   // ============================================================================
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final InteractiveDrawerController _drawerController = InteractiveDrawerController();
+  final InteractiveDrawerController _drawerController =
+      InteractiveDrawerController();
   final ValueNotifier<int> _assistantPickerCloseTick = ValueNotifier<int>(0);
   final FocusNode _inputFocus = FocusNode();
   final TextEditingController _inputController = TextEditingController();
@@ -75,9 +78,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final GlobalKey _inputBarKey = GlobalKey();
   StreamSubscription<String>? _processTextSub;
   final AudioRecorder _audioRecorder = AudioRecorder();
-  final GroqSpeechToTextService _speechToTextService = GroqSpeechToTextService();
+  final GroqSpeechToTextService _speechToTextService =
+      GroqSpeechToTextService();
   bool _speechToTextRecording = false;
   bool _speechToTextTranscribing = false;
+  bool _liveModeOpen = false;
 
   // ============================================================================
   // Page Controller (manages all business logic and state)
@@ -92,7 +97,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    try { WidgetsBinding.instance.addObserver(this); } catch (_) {}
+    try {
+      WidgetsBinding.instance.addObserver(this);
+    } catch (_) {}
 
     _controller = HomePageController(
       context: context,
@@ -111,7 +118,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     _controller.initChat();
     _initProcessText();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _controller.measureInputBar());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _controller.measureInputBar(),
+    );
   }
 
   @override
@@ -140,9 +149,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   @override
   void dispose() {
-    try { WidgetsBinding.instance.removeObserver(this); } catch (_) {}
+    try {
+      WidgetsBinding.instance.removeObserver(this);
+    } catch (_) {}
     _processTextSub?.cancel();
-    try { unawaited(_audioRecorder.dispose()); } catch (_) {}
+    try {
+      unawaited(_audioRecorder.dispose());
+    } catch (_) {}
     _controller.removeListener(_onControllerChanged);
     _drawerController.removeListener(_onDrawerValueChanged);
     _inputFocus.dispose();
@@ -188,7 +201,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final start = (selection.start >= 0 && selection.start <= current.length)
         ? selection.start
         : current.length;
-    final end = (selection.end >= 0 && selection.end <= current.length && selection.end >= start)
+    final end =
+        (selection.end >= 0 &&
+            selection.end <= current.length &&
+            selection.end >= start)
         ? selection.end
         : start;
     final next = current.replaceRange(start, end, trimmed);
@@ -219,7 +235,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       return;
     }
 
-    final isGroq = ProviderConfig.classify(cfg.id, explicitType: cfg.providerType) == ProviderKind.groq;
+    final isGroq =
+        ProviderConfig.classify(cfg.id, explicitType: cfg.providerType) ==
+        ProviderKind.groq;
     if (!isGroq) {
       showAppSnackBar(
         context,
@@ -252,8 +270,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         }
 
         final tempDir = await getTemporaryDirectory();
-        final path = '${tempDir.path}/kelivo_stt_${DateTime.now().millisecondsSinceEpoch}.m4a';
-        await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+        final path =
+            '${tempDir.path}/kelivo_stt_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        await _audioRecorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: path,
+        );
         if (!mounted) return;
         setState(() => _speechToTextRecording = true);
       } catch (e) {
@@ -331,9 +353,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final end = selection.end;
     final prefix = value.text.substring(0, start);
     final suffix = value.text.substring(end);
-    final needsLeadingSpace = prefix.isNotEmpty && !RegExp(r'\s$').hasMatch(prefix);
-    final needsTrailingSpace = suffix.isNotEmpty && !RegExp(r'^\s').hasMatch(suffix);
-    final insert = '${needsLeadingSpace ? ' ' : ''}$text${needsTrailingSpace ? ' ' : ''}';
+    final needsLeadingSpace =
+        prefix.isNotEmpty && !RegExp(r'\s$').hasMatch(prefix);
+    final needsTrailingSpace =
+        suffix.isNotEmpty && !RegExp(r'^\s').hasMatch(suffix);
+    final insert =
+        '${needsLeadingSpace ? ' ' : ''}$text${needsTrailingSpace ? ' ' : ''}';
     final next = value.text.replaceRange(start, end, insert);
 
     _inputController.value = value.copyWith(
@@ -341,6 +366,75 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       selection: TextSelection.collapsed(offset: start + insert.length),
       composing: TextRange.empty,
     );
+  }
+
+  bool _isGeminiLiveCapable(ProviderConfig? config) {
+    if (config == null || !config.enabled) {
+      return false;
+    }
+    final ProviderKind kind = ProviderConfig.classify(
+      config.id,
+      explicitType: config.providerType,
+    );
+    return kind == ProviderKind.google &&
+        (config.vertexAI != true) &&
+        config.apiKey.trim().isNotEmpty;
+  }
+
+  ProviderConfig? _resolveGeminiLiveConfig(
+    SettingsProvider settings,
+    Assistant? assistant,
+  ) {
+    final ProviderConfig? active = getActiveProviderConfig(
+      settings,
+      assistant: assistant,
+    );
+    if (_isGeminiLiveCapable(active)) {
+      return active;
+    }
+
+    for (final ProviderConfig config in settings.providerConfigs.values) {
+      if (_isGeminiLiveCapable(config)) {
+        return config;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _openGeminiLiveMode() async {
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    final Assistant? assistant = context
+        .read<AssistantProvider>()
+        .currentAssistant;
+    final ProviderConfig? config = _resolveGeminiLiveConfig(
+      settings,
+      assistant,
+    );
+
+    if (config == null) {
+      showAppSnackBar(
+        context,
+        message:
+            'Configure a Google provider with a Gemini API key to use live voice mode.',
+        type: NotificationType.warning,
+      );
+      return;
+    }
+
+    setState(() => _liveModeOpen = true);
+    try {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              GeminiLivePage(providerConfig: config, assistant: assistant),
+          fullscreenDialog: true,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _liveModeOpen = false);
+      }
+    }
   }
 
   // ============================================================================
@@ -356,7 +450,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     final modelInfo = getModelDisplayInfo(settings, assistant: assistant);
 
-    final title = ((_controller.currentConversation?.title ?? '').trim().isNotEmpty)
+    final title =
+        ((_controller.currentConversation?.title ?? '').trim().isNotEmpty)
         ? _controller.currentConversation!.title
         : _controller.titleForLocale();
 
@@ -406,7 +501,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         final collapsed = _controller.collapseVersions(_controller.messages);
         String? selectedId;
         if (PlatformUtils.isDesktop) {
-          selectedId = await showDesktopMiniMapPopover(context, anchorKey: _inputBarKey, messages: collapsed);
+          selectedId = await showDesktopMiniMapPopover(
+            context,
+            anchorKey: _inputBarKey,
+            messages: collapsed,
+          );
         } else {
           selectedId = await showMiniMapSheet(context, collapsed);
         }
@@ -433,26 +532,43 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         _buildChatBackground(context, cs),
         // Main content
         Padding(
-          padding: EdgeInsets.only(top: kToolbarHeight + MediaQuery.paddingOf(context).top),
+          padding: EdgeInsets.only(
+            top: kToolbarHeight + MediaQuery.paddingOf(context).top,
+          ),
           child: Column(
             children: [
               Expanded(
                 child: Builder(
                   builder: (context) {
                     final content = KeyedSubtree(
-                      key: ValueKey<String>(_controller.currentConversation?.id ?? 'none'),
+                      key: ValueKey<String>(
+                        _controller.currentConversation?.id ?? 'none',
+                      ),
                       child: _buildMessageListView(
                         context,
-                        dividerPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: AppSpacing.md),
+                        dividerPadding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: AppSpacing.md,
+                        ),
                       ),
                     );
-                    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+                    final isAndroid =
+                        Theme.of(context).platform == TargetPlatform.android;
                     Widget w = content;
                     if (!isAndroid) {
                       w = w
-                          .animate(key: ValueKey('mob_body_'+(_controller.currentConversation?.id ?? 'none')))
+                          .animate(
+                            key: ValueKey(
+                              'mob_body_' +
+                                  (_controller.currentConversation?.id ??
+                                      'none'),
+                            ),
+                          )
                           .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic);
-                      w = FadeTransition(opacity: _controller.convoFade, child: w);
+                      w = FadeTransition(
+                        opacity: _controller.convoFade,
+                        child: w,
+                      );
                     }
                     return w;
                   },
@@ -461,12 +577,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               // Input bar
               NotificationListener<SizeChangedLayoutNotification>(
                 onNotification: (n) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _controller.measureInputBar());
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _controller.measureInputBar(),
+                  );
                   return false;
                 },
                 child: SizeChangedLayoutNotifier(
                   child: Builder(
-                    builder: (context) => _buildChatInputBar(context, isTablet: false),
+                    builder: (context) =>
+                        _buildChatInputBar(context, isTablet: false),
                   ),
                 ),
               ),
@@ -529,32 +648,52 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Stack(
       children: [
         Padding(
-          padding: EdgeInsets.only(top: kToolbarHeight + MediaQuery.paddingOf(context).top),
+          padding: EdgeInsets.only(
+            top: kToolbarHeight + MediaQuery.paddingOf(context).top,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: FadeTransition(
                   opacity: _controller.convoFade,
-                  child: KeyedSubtree(
-                    key: ValueKey<String>(_controller.currentConversation?.id ?? 'none'),
-                    child: _buildMessageListView(
-                      context,
-                      dividerPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    ),
-                  ).animate(key: ValueKey('tab_body_'+(_controller.currentConversation?.id ?? 'none')))
-                   .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic),
+                  child:
+                      KeyedSubtree(
+                            key: ValueKey<String>(
+                              _controller.currentConversation?.id ?? 'none',
+                            ),
+                            child: _buildMessageListView(
+                              context,
+                              dividerPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 12,
+                              ),
+                            ),
+                          )
+                          .animate(
+                            key: ValueKey(
+                              'tab_body_' +
+                                  (_controller.currentConversation?.id ??
+                                      'none'),
+                            ),
+                          )
+                          .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic),
                 ),
               ),
               NotificationListener<SizeChangedLayoutNotification>(
                 onNotification: (n) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _controller.measureInputBar());
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _controller.measureInputBar(),
+                  );
                   return false;
                 },
                 child: SizeChangedLayoutNotifier(
                   child: Builder(
                     builder: (context) {
-                      Widget input = _buildChatInputBar(context, isTablet: true);
+                      Widget input = _buildChatInputBar(
+                        context,
+                        isTablet: true,
+                      );
                       input = Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(
@@ -584,8 +723,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   Widget _buildChatBackground(BuildContext context, ColorScheme cs) {
     return Builder(
       builder: (context) {
-        final bg = context.watch<AssistantProvider>().currentAssistant?.background;
-        final maskStrength = context.watch<SettingsProvider>().chatBackgroundMaskStrength;
+        final bg = context
+            .watch<AssistantProvider>()
+            .currentAssistant
+            ?.background;
+        final maskStrength = context
+            .watch<SettingsProvider>()
+            .chatBackgroundMaskStrength;
         if (bg == null || bg.trim().isEmpty) return const SizedBox.shrink();
         ImageProvider provider;
         if (bg.startsWith('http')) {
@@ -605,7 +749,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     image: DecorationImage(
                       image: provider,
                       fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.04), BlendMode.srcATop),
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.04),
+                        BlendMode.srcATop,
+                      ),
                     ),
                   ),
                 ),
@@ -644,7 +791,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     Widget? bg;
     if (bgRaw.isNotEmpty) {
       if (bgRaw.startsWith('http')) {
-        bg = Image.network(bgRaw, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink());
+        bg = Image.network(
+          bgRaw,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        );
       } else {
         try {
           final fixed = SandboxPathResolver.fix(bgRaw);
@@ -699,13 +850,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       onVersionChange: (groupId, version) async {
         await _controller.setSelectedVersion(groupId, version);
       },
-      onRegenerateMessage: (message) => _controller.regenerateAtMessage(message),
+      onRegenerateMessage: (message) =>
+          _controller.regenerateAtMessage(message),
       onResendMessage: (message) => _controller.regenerateAtMessage(message),
       onTranslateMessage: (message) => _controller.translateMessage(message),
       onEditMessage: (message) => _controller.editMessage(message),
-      onDeleteMessage: (message, byGroup) => _handleDeleteMessage(context, message, byGroup),
+      onDeleteMessage: (message, byGroup) =>
+          _handleDeleteMessage(context, message, byGroup),
       onForkConversation: (message) => _controller.forkConversation(message),
-      onShareMessage: (index, messages) => _controller.shareMessage(index, messages),
+      onShareMessage: (index, messages) =>
+          _controller.shareMessage(index, messages),
       onSpeakMessage: (message) => _controller.speakMessage(message),
       onToggleSelection: (messageId, selected) {
         _controller.toggleSelection(messageId, selected);
@@ -726,9 +880,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final settings = context.watch<SettingsProvider>();
     final assistant = context.watch<AssistantProvider>().currentAssistant;
     final activeCfg = getActiveProviderConfig(settings, assistant: assistant);
-    final activeIsGroq = activeCfg != null &&
-        ProviderConfig.classify(activeCfg.id, explicitType: activeCfg.providerType) == ProviderKind.groq;
+    final activeIsGroq =
+        activeCfg != null &&
+        ProviderConfig.classify(
+              activeCfg.id,
+              explicitType: activeCfg.providerType,
+            ) ==
+            ProviderKind.groq;
     final sttEnabled = activeIsGroq && (activeCfg.speechToTextEnabled ?? false);
+    final liveConfig = _resolveGeminiLiveConfig(settings, assistant);
+    final liveEnabled = liveConfig != null;
 
     return ChatInputSection(
       inputBarKey: _inputBarKey,
@@ -743,31 +904,37 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       onMore: _toggleTools,
       onSelectModel: () => showModelSelectSheet(context),
       onLongPressSelectModel: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ProvidersPage()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const ProvidersPage()));
       },
       onOpenMcp: () {
         final a = context.read<AssistantProvider>().currentAssistant;
         if (a != null) {
           if (PlatformUtils.isDesktop) {
-            showDesktopMcpServersPopover(context, anchorKey: _inputBarKey, assistantId: a.id);
+            showDesktopMcpServersPopover(
+              context,
+              anchorKey: _inputBarKey,
+              assistantId: a.id,
+            );
           } else {
             showAssistantMcpSheet(context, assistantId: a.id);
           }
         }
       },
       onLongPressMcp: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const McpPage()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const McpPage()));
       },
       onOpenSearch: _openSearchSettings,
       onConfigureReasoning: () async {
         final assistant = context.read<AssistantProvider>().currentAssistant;
         if (assistant != null) {
           if (assistant.thinkingBudget != null) {
-            context.read<SettingsProvider>().setThinkingBudget(assistant.thinkingBudget);
+            context.read<SettingsProvider>().setThinkingBudget(
+              assistant.thinkingBudget,
+            );
           }
           await _openReasoningSettings();
           final chosen = context.read<SettingsProvider>().thinkingBudget;
@@ -788,9 +955,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       onStop: _controller.cancelStreaming,
       onQuickPhrase: _showQuickPhraseMenu,
       onLongPressQuickPhrase: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const QuickPhrasesPage()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const QuickPhrasesPage()));
       },
       onToggleOcr: () async {
         final sp = context.read<SettingsProvider>();
@@ -800,7 +967,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         final collapsed = _controller.collapseVersions(_controller.messages);
         String? selectedId;
         if (PlatformUtils.isDesktop) {
-          selectedId = await showDesktopMiniMapPopover(context, anchorKey: _inputBarKey, messages: collapsed);
+          selectedId = await showDesktopMiniMapPopover(
+            context,
+            anchorKey: _inputBarKey,
+            messages: collapsed,
+          );
         } else {
           selectedId = await showMiniMapSheet(context, collapsed);
         }
@@ -818,6 +989,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       speechToTextEnabled: sttEnabled,
       speechToTextRecording: _speechToTextRecording,
       speechToTextTranscribing: _speechToTextTranscribing,
+      onOpenLiveMode: liveEnabled ? _openGeminiLiveMode : null,
+      liveModeEnabled: liveEnabled,
+      liveModeActive: _liveModeOpen,
     );
   }
 
@@ -841,18 +1015,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildScrollButtons() {
-    return Builder(builder: (context) {
-      final showSetting = context.watch<SettingsProvider>().showMessageNavButtons;
-      if (!showSetting || _controller.messages.isEmpty) return const SizedBox.shrink();
-      return ScrollNavButtonsPanel(
-        visible: _controller.scrollCtrl.showNavButtons,
-        bottomOffset: _controller.inputBarHeight + 12,
-        onScrollToTop: _controller.scrollToTop,
-        onPreviousMessage: _controller.jumpToPreviousQuestion,
-        onNextMessage: _controller.jumpToNextQuestion,
-        onScrollToBottom: _controller.forceScrollToBottom,
-      );
-    });
+    return Builder(
+      builder: (context) {
+        final showSetting = context
+            .watch<SettingsProvider>()
+            .showMessageNavButtons;
+        if (!showSetting || _controller.messages.isEmpty)
+          return const SizedBox.shrink();
+        return ScrollNavButtonsPanel(
+          visible: _controller.scrollCtrl.showNavButtons,
+          bottomOffset: _controller.inputBarHeight + 12,
+          onScrollToTop: _controller.scrollToTop,
+          onPreviousMessage: _controller.jumpToPreviousQuestion,
+          onNextMessage: _controller.jumpToNextQuestion,
+          onScrollToBottom: _controller.forceScrollToBottom,
+        );
+      },
+    );
   }
 
   Widget _wrapWithDropTarget(Widget child) {
@@ -881,15 +1060,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 color: Colors.black.withOpacity(0.12),
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surface.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.4), width: 2),
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.4),
+                        width: 2,
+                      ),
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.homePageDropToUpload,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -948,6 +1140,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     _controller.dismissKeyboard();
     final cs = Theme.of(context).colorScheme;
     final assistantId = context.read<AssistantProvider>().currentAssistantId;
+    final settings = context.read<SettingsProvider>();
+    final assistant = context.read<AssistantProvider>().currentAssistant;
+    final liveEnabled = _resolveGeminiLiveConfig(settings, assistant) != null;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -971,6 +1166,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               Navigator.of(ctx).maybePop();
               _controller.onPickFiles();
             },
+            onLive: liveEnabled
+                ? () {
+                    Navigator.of(ctx).maybePop();
+                    _openGeminiLiveMode();
+                  }
+                : null,
             onClear: () async {
               Navigator.of(ctx).maybePop();
               await _controller.clearContext();
@@ -994,7 +1195,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final allAvailable = [...globalPhrases, ...assistantPhrases];
     if (allAvailable.isEmpty) return;
 
-    final RenderBox? inputBox = _inputBarKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? inputBox =
+        _inputBarKey.currentContext?.findRenderObject() as RenderBox?;
     if (inputBox == null) return;
 
     final inputBarHeight = inputBox.size.height;
@@ -1005,7 +1207,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     QuickPhrase? selected;
     if (PlatformUtils.isDesktop) {
-      selected = await showDesktopQuickPhrasePopover(context, anchorKey: _inputBarKey, phrases: allAvailable);
+      selected = await showDesktopQuickPhrasePopover(
+        context,
+        anchorKey: _inputBarKey,
+        phrases: allAvailable,
+      );
     } else {
       selected = await showQuickPhraseMenu(
         context: context,
@@ -1037,7 +1243,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.homePageDelete, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              l10n.homePageDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),

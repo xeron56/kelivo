@@ -62,6 +62,9 @@ class ChatInputSection extends StatelessWidget {
     this.speechToTextEnabled = false,
     this.speechToTextRecording = false,
     this.speechToTextTranscribing = false,
+    this.onOpenLiveMode,
+    this.liveModeEnabled = false,
+    this.liveModeActive = false,
   });
 
   final GlobalKey inputBarKey;
@@ -100,6 +103,9 @@ class ChatInputSection extends StatelessWidget {
   final bool speechToTextEnabled;
   final bool speechToTextRecording;
   final bool speechToTextTranscribing;
+  final VoidCallback? onOpenLiveMode;
+  final bool liveModeEnabled;
+  final bool liveModeActive;
 
   @override
   Widget build(BuildContext context) {
@@ -189,6 +195,9 @@ class ChatInputSection extends StatelessWidget {
       speechToTextEnabled: speechToTextEnabled,
       speechToTextRecording: speechToTextRecording,
       speechToTextTranscribing: speechToTextTranscribing,
+      onOpenLiveMode: onOpenLiveMode,
+      liveModeEnabled: liveModeEnabled,
+      liveModeActive: liveModeActive,
     );
   }
 

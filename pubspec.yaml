@@ -92,6 +92,7 @@ dependencies:
   super_clipboard: ^0.9.1
   permission_handler: ^11.3.1
   record: ^6.2.0
+  web_socket_channel: ^3.0.1
   flutter_tts:
     path: ./dependencies/flutter_tts
   finance_tracker:

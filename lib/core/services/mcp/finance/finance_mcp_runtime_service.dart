@@ -8,6 +8,8 @@ import 'package:finance_tracker/core/enums/voucher_type.dart';
 import 'package:finance_tracker/viewmodels/app_viewmodel.dart';
 import 'package:mcp_sdk/mcp_sdk.dart';
 
+import '../../finance/finance_transaction_action_service.dart';
+
 class FinanceMcpToolSpec {
   const FinanceMcpToolSpec({
     required this.name,
@@ -24,8 +26,10 @@ class FinanceMcpRuntimeService {
   FinanceMcpRuntimeService({
     required AppDriftDatabase database,
     required AppViewmodel appViewmodel,
+    required FinanceTransactionActionService actionService,
   }) : _database = database,
-       _appViewmodel = appViewmodel;
+       _appViewmodel = appViewmodel,
+       _actionService = actionService;
 
   static const String serverName = '@kelivo/finance';
   static const String promptName = 'finance_analyst_prompt';
@@ -37,7 +41,11 @@ class FinanceMcpRuntimeService {
       'answering. For balance questions, current balance questions, account '
       'balance questions, or funds balance questions, call '
       'get_current_balance before answering. Do not use spending tools for '
-      'balance questions. Explain spending patterns clearly.';
+      'balance questions. For finance write actions, use '
+      'get_transaction_entry_options whenever account names are unclear, then '
+      'use create_finance_transaction to add the record. Explain spending '
+      'patterns clearly and confirm any created transaction with the resolved '
+      'fund account, category, amount, and date.';
 
   static const List<FinanceMcpToolSpec> toolSpecs = <FinanceMcpToolSpec>[
     FinanceMcpToolSpec(
@@ -131,6 +139,62 @@ class FinanceMcpRuntimeService {
         },
       },
     ),
+    FinanceMcpToolSpec(
+      name: 'get_transaction_entry_options',
+      description:
+          'Get available fund accounts, expense categories, income categories, and projects for creating a finance transaction.',
+      inputSchema: <String, dynamic>{
+        'type': 'object',
+        'properties': <String, dynamic>{},
+      },
+    ),
+    FinanceMcpToolSpec(
+      name: 'create_finance_transaction',
+      description:
+          'Create an income or expense transaction in the finance database. Use this after the user explicitly states money spent or earned.',
+      inputSchema: <String, dynamic>{
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'transaction_type': <String, dynamic>{
+            'type': 'string',
+            'enum': <String>['expense', 'income'],
+            'description': 'Whether the user spent money or earned money.',
+          },
+          'amount': <String, dynamic>{
+            'type': 'number',
+            'description': 'Human currency amount, for example 12.5.',
+          },
+          'category_name': <String, dynamic>{
+            'type': 'string',
+            'description':
+                'Expense or income category account name, for example Groceries or Salary.',
+          },
+          'fund_account_name': <String, dynamic>{
+            'type': 'string',
+            'description':
+                'Funding account name, for example Cash, Wallet, Bank, or Card.',
+          },
+          'narration': <String, dynamic>{
+            'type': 'string',
+            'description':
+                'Optional narration or note to store with the transaction.',
+          },
+          'transaction_date': <String, dynamic>{
+            'type': 'string',
+            'description': 'Optional date in YYYY-MM-DD. Defaults to today.',
+          },
+          'reference_no': <String, dynamic>{
+            'type': 'string',
+            'description': 'Optional reference number.',
+          },
+          'project_name': <String, dynamic>{
+            'type': 'string',
+            'description': 'Optional project name.',
+          },
+        },
+        'required': <String>['transaction_type', 'amount'],
+      },
+    ),
   ];
 
   static final Map<String, FinanceMcpToolSpec> _specByName =
@@ -140,6 +204,7 @@ class FinanceMcpRuntimeService {
 
   final AppDriftDatabase _database;
   final AppViewmodel _appViewmodel;
+  final FinanceTransactionActionService _actionService;
 
   McpServer? _server;
   McpClient? _client;
@@ -422,6 +487,37 @@ class FinanceMcpRuntimeService {
         return _handleGetRecentTransactions(args);
       },
     );
+
+    server.registerTool(
+      name: 'get_transaction_entry_options',
+      description: _specByName['get_transaction_entry_options']!.description,
+      inputSchema: ToolInputSchema(
+        properties:
+            _specByName['get_transaction_entry_options']!
+                    .inputSchema['properties']
+                as Map<String, dynamic>,
+      ),
+      callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
+        return _handleGetTransactionEntryOptions(args);
+      },
+    );
+
+    server.registerTool(
+      name: 'create_finance_transaction',
+      description: _specByName['create_finance_transaction']!.description,
+      inputSchema: ToolInputSchema(
+        properties:
+            _specByName['create_finance_transaction']!.inputSchema['properties']
+                as Map<String, dynamic>,
+        required:
+            (_specByName['create_finance_transaction']!.inputSchema['required']
+                    as List<dynamic>)
+                .cast<String>(),
+      ),
+      callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
+        return _handleCreateFinanceTransaction(args);
+      },
+    );
   }
 
   Future<CallToolResult> _handleGetCurrentBalance(
@@ -571,6 +667,29 @@ class FinanceMcpRuntimeService {
     });
   }
 
+  Future<CallToolResult> _handleGetTransactionEntryOptions(
+    Map<String, dynamic>? args,
+  ) async {
+    final Map<String, dynamic> result = await _actionService.getEntryOptions();
+    return _resultFromAction(result);
+  }
+
+  Future<CallToolResult> _handleCreateFinanceTransaction(
+    Map<String, dynamic>? args,
+  ) async {
+    final Map<String, dynamic> result = await _actionService.createTransaction(
+      transactionType: (args?['transaction_type'] ?? '').toString(),
+      amount: args?['amount'],
+      categoryName: (args?['category_name'] ?? '').toString(),
+      fundAccountName: (args?['fund_account_name'] ?? '').toString(),
+      narration: (args?['narration'] ?? '').toString(),
+      transactionDate: (args?['transaction_date'] ?? '').toString(),
+      referenceNo: (args?['reference_no'] ?? '').toString(),
+      projectName: (args?['project_name'] ?? '').toString(),
+    );
+    return _resultFromAction(result);
+  }
+
   Future<int> _sumExpensePayments({
     required int profileId,
     required DateTime start,
@@ -586,7 +705,7 @@ class FinanceMcpRuntimeService {
           'AND t.vch_date >= ? '
           'AND t.vch_date < ? '
           'AND t.vch_type = ? '
-          'AND ty.primary = ?',
+          'AND ty."primary" = ?',
           variables: <Variable<Object>>[
             Variable.withInt(profileId),
             Variable.withDateTime(start),
@@ -616,7 +735,7 @@ class FinanceMcpRuntimeService {
           'AND t.vch_date >= ? '
           'AND t.vch_date < ? '
           'AND t.vch_type = ? '
-          'AND ty.primary = ? '
+          'AND ty."primary" = ? '
           'AND lower(a.name) = lower(?)',
           variables: <Variable<Object>>[
             Variable.withInt(profileId),
@@ -645,7 +764,7 @@ class FinanceMcpRuntimeService {
           'AND t.vch_date >= ? '
           'AND t.vch_date < ? '
           'AND t.vch_type = ? '
-          'AND ty.primary = ? '
+          'AND ty."primary" = ? '
           'AND lower(a.name) LIKE ?',
           variables: <Variable<Object>>[
             Variable.withInt(profileId),
@@ -676,7 +795,7 @@ class FinanceMcpRuntimeService {
           'AND t.vch_date >= ? '
           'AND t.vch_date < ? '
           'AND t.vch_type = ? '
-          'AND ty.primary = ? '
+          'AND ty."primary" = ? '
           'GROUP BY a.name '
           'ORDER BY total_amount DESC, category ASC',
           variables: <Variable<Object>>[
@@ -867,7 +986,7 @@ class FinanceMcpRuntimeService {
     return '${date.year}-$month-$day $hour:$minute';
   }
 
-  static double _toMajorUnits(int minorUnits) => minorUnits / 100.0;
+  static double _toMajorUnits(int minorUnits) => minorUnits / 1000.0;
 
   static String _encodePrettyJson(Object? data) {
     return const JsonEncoder.withIndent('  ').convert(data);
@@ -893,6 +1012,14 @@ class FinanceMcpRuntimeService {
 
   static CallToolResult _jsonResult(Map<String, dynamic> map) {
     return CallToolResult(
+      content: <Content>[TextContent(text: _encodePrettyJson(map))],
+    );
+  }
+
+  static CallToolResult _resultFromAction(Map<String, dynamic> map) {
+    final bool ok = map['ok'] == true;
+    return CallToolResult(
+      isError: !ok,
       content: <Content>[TextContent(text: _encodePrettyJson(map))],
     );
   }

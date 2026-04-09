@@ -18,6 +18,7 @@ class BottomToolsSheet extends StatelessWidget {
     this.onCamera,
     this.onPhotos,
     this.onUpload,
+    this.onLive,
     this.onClear,
     this.clearLabel,
     this.assistantId,
@@ -26,6 +27,7 @@ class BottomToolsSheet extends StatelessWidget {
   final VoidCallback? onCamera;
   final VoidCallback? onPhotos;
   final VoidCallback? onUpload;
+  final VoidCallback? onLive;
   final VoidCallback? onClear;
   final String? clearLabel;
   final String? assistantId;
@@ -36,7 +38,11 @@ class BottomToolsSheet extends StatelessWidget {
     final bg = Theme.of(context).colorScheme.surface;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
 
-    Widget roundedAction({required IconData icon, required String label, VoidCallback? onTap}) {
+    Widget roundedAction({
+      required IconData icon,
+      required String label,
+      VoidCallback? onTap,
+    }) {
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final cardColor = isDark ? Colors.white10 : const Color(0xFFF2F3F5);
       return Expanded(
@@ -55,7 +61,11 @@ class BottomToolsSheet extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 24, color: Theme.of(context).colorScheme.onSurface),
+                  Icon(
+                    icon,
+                    size: 24,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   const SizedBox(height: 6),
                   Text(label, style: const TextStyle(fontSize: 13)),
                 ],
@@ -124,6 +134,64 @@ class BottomToolsSheet extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (onLive != null) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: IosCardPress(
+                          baseColor: const Color(0xFF0E2742),
+                          borderRadius: BorderRadius.circular(16),
+                          pressedScale: 0.985,
+                          duration: const Duration(milliseconds: 260),
+                          onTap: () {
+                            Haptics.light();
+                            onLive?.call();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Lucide.AudioWaveform,
+                                  color: Colors.white.withOpacity(0.92),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Live voice mode',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Talk to Gemini and let it record finance actions.',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Lucide.ChevronRight,
+                                  color: Colors.white70,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     _LearningAndClearSection(
                       clearLabel: clearLabel,
@@ -142,17 +210,28 @@ class BottomToolsSheet extends StatelessWidget {
 }
 
 class _LearningAndClearSection extends StatefulWidget {
-  const _LearningAndClearSection({this.onClear, this.clearLabel, this.assistantId});
+  const _LearningAndClearSection({
+    this.onClear,
+    this.clearLabel,
+    this.assistantId,
+  });
   final VoidCallback? onClear;
   final String? clearLabel;
   final String? assistantId;
 
   @override
-  State<_LearningAndClearSection> createState() => _LearningAndClearSectionState();
+  State<_LearningAndClearSection> createState() =>
+      _LearningAndClearSectionState();
 }
 
 class _LearningAndClearSectionState extends State<_LearningAndClearSection> {
-  Widget _row({required IconData icon, required String label, bool selected = false, VoidCallback? onTap, VoidCallback? onLongPress}) {
+  Widget _row({
+    required IconData icon,
+    required String label,
+    bool selected = false,
+    VoidCallback? onTap,
+    VoidCallback? onLongPress,
+  }) {
     final cs = Theme.of(context).colorScheme;
     final onColor = selected ? cs.primary : cs.onSurface;
     final radius = BorderRadius.circular(14);
@@ -169,8 +248,20 @@ class _LearningAndClearSectionState extends State<_LearningAndClearSection> {
           children: [
             Icon(icon, size: 20, color: onColor),
             const SizedBox(width: 10),
-            Expanded(child: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: onColor))),
-            if (selected) Icon(Lucide.Check, size: 18, color: cs.primary) else const SizedBox(width: 18),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: onColor,
+                ),
+              ),
+            ),
+            if (selected)
+              Icon(Lucide.Check, size: 18, color: cs.primary)
+            else
+              const SizedBox(width: 18),
           ],
         ),
       ),
@@ -183,7 +274,8 @@ class _LearningAndClearSectionState extends State<_LearningAndClearSection> {
     final provider = context.watch<InstructionInjectionProvider>();
     final settings = context.watch<SettingsProvider>();
     final items = provider.items;
-    final hasOcrModel = settings.ocrModelProvider != null && settings.ocrModelId != null;
+    final hasOcrModel =
+        settings.ocrModelProvider != null && settings.ocrModelId != null;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -204,13 +296,20 @@ class _LearningAndClearSectionState extends State<_LearningAndClearSection> {
                 label: items[i].title.trim().isEmpty
                     ? l10n.instructionInjectionDefaultTitle
                     : items[i].title,
-                selected: provider.isActive(items[i].id, assistantId: widget.assistantId),
+                selected: provider.isActive(
+                  items[i].id,
+                  assistantId: widget.assistantId,
+                ),
                 onTap: () async {
                   Haptics.light();
                   final p = context.read<InstructionInjectionProvider>();
-                  await p.toggleActiveId(items[i].id, assistantId: widget.assistantId);
+                  await p.toggleActiveId(
+                    items[i].id,
+                    assistantId: widget.assistantId,
+                  );
                 },
-                onLongPress: () => _editInstructionInjectionPrompt(context, items[i]),
+                onLongPress: () =>
+                    _editInstructionInjectionPrompt(context, items[i]),
               ),
             ),
         ],
@@ -282,7 +381,10 @@ class _InstructionInjectionListItem extends StatelessWidget {
   }
 }
 
-Future<void> _editInstructionInjectionPrompt(BuildContext context, InstructionInjection item) async {
+Future<void> _editInstructionInjectionPrompt(
+  BuildContext context,
+  InstructionInjection item,
+) async {
   final l10n = AppLocalizations.of(context)!;
   final cs = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -300,41 +402,76 @@ Future<void> _editInstructionInjectionPrompt(BuildContext context, InstructionIn
     builder: (ctx) {
       return SafeArea(
         top: false,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 12,
-          bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(999),
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                l10n.instructionInjectionEditTitle,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  l10n.instructionInjectionEditTitle,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            if (showNameField) ...[
+              const SizedBox(height: 16),
+              if (showNameField) ...[
+                TextField(
+                  controller: titleController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: l10n.instructionInjectionNameLabel,
+                    filled: true,
+                    fillColor: isDark
+                        ? Colors.white10
+                        : const Color(0xFFF2F3F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: cs.outlineVariant.withOpacity(0.4),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: cs.outlineVariant.withOpacity(0.4),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: cs.primary.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               TextField(
-                controller: titleController,
-                autofocus: true,
+                controller: controller,
+                maxLines: 8,
                 decoration: InputDecoration(
-                  labelText: l10n.instructionInjectionNameLabel,
+                  labelText: l10n.instructionInjectionPromptLabel,
+                  alignLabelWithHint: true,
                   filled: true,
                   fillColor: isDark ? Colors.white10 : const Color(0xFFF2F3F5),
                   border: OutlineInputBorder(
@@ -355,60 +492,36 @@ Future<void> _editInstructionInjectionPrompt(BuildContext context, InstructionIn
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-            ],
-            TextField(
-              controller: controller,
-              maxLines: 8,
-              decoration: InputDecoration(
-                labelText: l10n.instructionInjectionPromptLabel,
-                alignLabelWithHint: true,
-                filled: true,
-                fillColor: isDark ? Colors.white10 : const Color(0xFFF2F3F5),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: cs.outlineVariant.withOpacity(0.4),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _IosOutlineButton(
+                      label: l10n.quickPhraseCancelButton,
+                      onTap: () => Navigator.of(ctx).pop(),
+                    ),
                   ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: cs.outlineVariant.withOpacity(0.4),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _IosFilledButton(
+                      label: l10n.quickPhraseSaveButton,
+                      onTap: () async {
+                        final newTitle = showNameField
+                            ? titleController.text.trim()
+                            : item.title;
+                        final updated = item.copyWith(
+                          title: newTitle,
+                          prompt: controller.text.trim(),
+                        );
+                        await ctx.read<InstructionInjectionProvider>().update(
+                          updated,
+                        );
+                        if (ctx.mounted) Navigator.of(ctx).pop();
+                      },
+                    ),
                   ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
-                ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _IosOutlineButton(
-                    label: l10n.quickPhraseCancelButton,
-                    onTap: () => Navigator.of(ctx).pop(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _IosFilledButton(
-                    label: l10n.quickPhraseSaveButton,
-                    onTap: () async {
-                      final newTitle = showNameField ? titleController.text.trim() : item.title;
-                      final updated = item.copyWith(
-                        title: newTitle,
-                        prompt: controller.text.trim(),
-                      );
-                      await ctx.read<InstructionInjectionProvider>().update(updated);
-                      if (ctx.mounted) Navigator.of(ctx).pop();
-                    },
-                  ),
-                ),
-              ],
-            ),
             ],
           ),
         ),
@@ -439,7 +552,8 @@ class _IosOutlineButtonState extends State<_IosOutlineButton> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => _set(true),
-      onTapUp: (_) => Future.delayed(const Duration(milliseconds: 80), () => _set(false)),
+      onTapUp: (_) =>
+          Future.delayed(const Duration(milliseconds: 80), () => _set(false)),
       onTapCancel: () => _set(false),
       onTap: () {
         Haptics.soft();
@@ -492,7 +606,8 @@ class _IosFilledButtonState extends State<_IosFilledButton> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => _set(true),
-      onTapUp: (_) => Future.delayed(const Duration(milliseconds: 80), () => _set(false)),
+      onTapUp: (_) =>
+          Future.delayed(const Duration(milliseconds: 80), () => _set(false)),
       onTapCancel: () => _set(false),
       onTap: () {
         Haptics.soft();
