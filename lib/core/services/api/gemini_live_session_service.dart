@@ -28,7 +28,25 @@ class GeminiLiveSessionService extends ChangeNotifier {
        _functionDeclarations = List<Map<String, dynamic>>.unmodifiable(
          functionDeclarations,
        ),
-       _toolHandler = toolHandler;
+       _toolHandler = toolHandler {
+    _playerStateSubscription = _audioPlayer.onPlayerStateChanged.listen((
+      PlayerState state,
+    ) {
+      final bool playing = state == PlayerState.playing;
+      if (_playingResponseAudio == playing) {
+        return;
+      }
+      _playingResponseAudio = playing;
+      if (_connected) {
+        if (playing) {
+          _status = 'Gemini is speaking…';
+        } else if (!_awaitingModelTurn) {
+          _status = 'Listening…';
+        }
+      }
+      _notifyListenersIfActive();
+    });
+  }
 
   final ProviderConfig _providerConfig;
   final String _modelId;
@@ -41,15 +59,19 @@ class GeminiLiveSessionService extends ChangeNotifier {
 
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _subscription;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
   Completer<void>? _setupCompleter;
 
   final List<String> _outputAudioParts = <String>[];
   StringBuffer _textResponseBuffer = StringBuffer();
   String? _lastAudioFilePath;
 
+  bool _isDisposed = false;
   bool _connecting = false;
   bool _connected = false;
   bool _awaitingModelTurn = false;
+  bool _receivingInputTurn = false;
+  bool _playingResponseAudio = false;
   String _status = 'Disconnected';
   String _inputTranscript = '';
   String _outputTranscript = '';
@@ -60,6 +82,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
   bool get connecting => _connecting;
   bool get connected => _connected;
   bool get awaitingModelTurn => _awaitingModelTurn;
+  bool get playingResponseAudio => _playingResponseAudio;
   String get status => _status;
   String get inputTranscript => _inputTranscript;
   String get outputTranscript => _outputTranscript;
@@ -67,7 +90,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
   String? get lastError => _lastError;
 
   Future<void> connect() async {
-    if (_connecting || _connected) {
+    if (_isDisposed || _connecting || _connected) {
       return;
     }
 
@@ -84,7 +107,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
     _connecting = true;
     _status = 'Connecting…';
     _lastError = null;
-    notifyListeners();
+    _notifyListenersIfActive();
 
     final Uri uri = Uri.parse(
       'wss://generativelanguage.googleapis.com/ws/'
@@ -102,14 +125,18 @@ class GeminiLiveSessionService extends ChangeNotifier {
           _status = 'Connection error';
           _connected = false;
           _connecting = false;
-          notifyListeners();
+          _completePendingSetup(error);
+          _notifyListenersIfActive();
         },
         onDone: () {
           _connected = false;
           _connecting = false;
           _awaitingModelTurn = false;
           _status = 'Disconnected';
-          notifyListeners();
+          _completePendingSetup(
+            StateError('Gemini Live websocket closed before setup completed.'),
+          );
+          _notifyListenersIfActive();
         },
       );
 
@@ -117,7 +144,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
         'setup': <String, dynamic>{
           'model': _modelId,
           'generationConfig': <String, dynamic>{
-            'responseModalities': <String>['TEXT'],
+            'responseModalities': <String>['AUDIO'],
             'speechConfig': <String, dynamic>{
               'voiceConfig': <String, dynamic>{
                 'prebuiltVoiceConfig': <String, dynamic>{
@@ -152,68 +179,70 @@ class GeminiLiveSessionService extends ChangeNotifier {
       _connected = true;
       _connecting = false;
       _status = 'Ready';
-      notifyListeners();
+      _notifyListenersIfActive();
     } catch (e) {
       _lastError = e.toString();
       _status = 'Connection failed';
       _connected = false;
       _connecting = false;
-      notifyListeners();
+      _notifyListenersIfActive();
       rethrow;
     }
   }
 
-  Future<void> disconnect() async {
-    try {
-      await _subscription?.cancel();
-    } catch (_) {}
+  Future<void> disconnect({bool notify = true, bool stopAudio = true}) async {
+    _completePendingSetup(
+      StateError('Gemini Live session disconnected before setup completed.'),
+    );
+    final StreamSubscription<dynamic>? subscription = _subscription;
     _subscription = null;
-    try {
-      await _channel?.sink.close();
-    } catch (_) {}
+    final WebSocketChannel? channel = _channel;
     _channel = null;
     try {
-      await _audioPlayer.stop();
+      await subscription?.cancel();
     } catch (_) {}
+    try {
+      await channel?.sink.close();
+    } catch (_) {}
+    if (stopAudio && !_isDisposed) {
+      try {
+        await _audioPlayer.stop();
+      } catch (_) {}
+    }
     await _deleteLastAudioFile();
     _connected = false;
     _connecting = false;
     _awaitingModelTurn = false;
+    _receivingInputTurn = false;
+    _playingResponseAudio = false;
     _status = 'Disconnected';
-    notifyListeners();
+    if (notify) {
+      _notifyListenersIfActive();
+    }
   }
 
   Future<void> sendTextTurn(String text) async {
     final String trimmed = text.trim();
-    if (trimmed.isEmpty) {
+    if (_isDisposed || trimmed.isEmpty) {
       return;
     }
     _awaitingModelTurn = true;
     _status = 'Waiting for Gemini…';
     _resetResponseBuffers();
-    notifyListeners();
+    _notifyListenersIfActive();
     _send(<String, dynamic>{
-      'clientContent': <String, dynamic>{
-        'turns': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'role': 'user',
-            'parts': <Map<String, dynamic>>[
-              <String, dynamic>{'text': trimmed},
-            ],
-          },
-        ],
-        'turnComplete': true,
-      },
+      'realtimeInput': <String, dynamic>{'text': trimmed},
     });
   }
 
   void sendAudioChunk(Uint8List pcmChunk, {int sampleRate = 16000}) {
-    if (pcmChunk.isEmpty) {
+    if (_isDisposed || pcmChunk.isEmpty) {
       return;
     }
-    _awaitingModelTurn = true;
-    _status = 'Listening…';
-    notifyListeners();
+    if (!_playingResponseAudio) {
+      _status = 'Listening…';
+    }
+    _notifyListenersIfActive();
     _send(<String, dynamic>{
       'realtimeInput': <String, dynamic>{
         'audio': <String, dynamic>{
@@ -225,21 +254,27 @@ class GeminiLiveSessionService extends ChangeNotifier {
   }
 
   void endAudioStream() {
+    if (_isDisposed) {
+      return;
+    }
     _status = 'Processing…';
-    notifyListeners();
+    _notifyListenersIfActive();
     _send(<String, dynamic>{
       'realtimeInput': <String, dynamic>{'audioStreamEnd': true},
     });
   }
 
   void _handleMessage(dynamic rawMessage) {
+    if (_isDisposed) {
+      return;
+    }
     try {
       final String messageText = _decodeSocketMessage(rawMessage);
       final Map<String, dynamic> message =
           jsonDecode(messageText) as Map<String, dynamic>;
 
       if (message.containsKey('setupComplete')) {
-        _setupCompleter?.complete();
+        _completePendingSetup();
         return;
       }
 
@@ -253,7 +288,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
     } catch (e) {
       _lastError = e.toString();
       _status = 'Message error';
-      notifyListeners();
+      _notifyListenersIfActive();
     }
   }
 
@@ -279,6 +314,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
     if (serverContent['interrupted'] == true) {
       _clearBufferedAudio();
       unawaited(_audioPlayer.stop());
+      _awaitingModelTurn = false;
       _status = 'Interrupted';
     }
 
@@ -286,6 +322,10 @@ class GeminiLiveSessionService extends ChangeNotifier {
       serverContent['inputTranscription'],
     );
     if (inputTranscription != null) {
+      if (!_receivingInputTurn && !_awaitingModelTurn) {
+        _receivingInputTurn = true;
+        _resetResponseBuffers();
+      }
       _inputTranscript = (inputTranscription['text'] ?? '').toString();
     }
 
@@ -293,11 +333,15 @@ class GeminiLiveSessionService extends ChangeNotifier {
       serverContent['outputTranscription'],
     );
     if (outputTranscription != null) {
+      _receivingInputTurn = false;
+      _awaitingModelTurn = true;
       _outputTranscript = (outputTranscription['text'] ?? '').toString();
     }
 
     final Map<String, dynamic>? modelTurn = _asMap(serverContent['modelTurn']);
     if (modelTurn != null) {
+      _receivingInputTurn = false;
+      _awaitingModelTurn = true;
       final List<dynamic> parts =
           (modelTurn['parts'] as List<dynamic>? ?? const <dynamic>[]);
       for (final dynamic rawPart in parts) {
@@ -322,16 +366,19 @@ class GeminiLiveSessionService extends ChangeNotifier {
     }
 
     if (serverContent['generationComplete'] == true) {
+      _receivingInputTurn = false;
+      _awaitingModelTurn = true;
       _status = 'Finishing audio…';
     }
 
     if (serverContent['turnComplete'] == true) {
+      _receivingInputTurn = false;
       _awaitingModelTurn = false;
-      _status = 'Ready';
+      _status = _playingResponseAudio ? 'Gemini is speaking…' : 'Listening…';
       unawaited(_playBufferedAudio());
     }
 
-    notifyListeners();
+    _notifyListenersIfActive();
   }
 
   Future<void> _handleToolCall(Map<String, dynamic> toolCall) async {
@@ -414,7 +461,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
       await _audioPlayer.play(DeviceFileSource(path));
     } catch (e) {
       _lastError = 'Audio playback failed: $e';
-      notifyListeners();
+      _notifyListenersIfActive();
     } finally {
       _clearBufferedAudio();
     }
@@ -448,7 +495,30 @@ class GeminiLiveSessionService extends ChangeNotifier {
   }
 
   void _send(Map<String, dynamic> payload) {
+    if (_isDisposed) {
+      return;
+    }
     _channel?.sink.add(jsonEncode(payload));
+  }
+
+  void _completePendingSetup([Object? error]) {
+    final Completer<void>? completer = _setupCompleter;
+    if (completer == null || completer.isCompleted) {
+      return;
+    }
+    _setupCompleter = null;
+    if (error == null) {
+      completer.complete();
+      return;
+    }
+    completer.completeError(error);
+  }
+
+  void _notifyListenersIfActive() {
+    if (_isDisposed) {
+      return;
+    }
+    notifyListeners();
   }
 
   static Map<String, dynamic>? _asMap(Object? value) {
@@ -537,7 +607,9 @@ class GeminiLiveSessionService extends ChangeNotifier {
 
   @override
   void dispose() {
-    unawaited(disconnect());
+    _isDisposed = true;
+    unawaited(disconnect(notify: false, stopAudio: false));
+    unawaited(_playerStateSubscription?.cancel());
     _audioPlayer.dispose();
     super.dispose();
   }
