@@ -44,8 +44,15 @@ class GeminiLiveSessionService extends ChangeNotifier {
           _status = 'Listening…';
         }
       }
+      if (!playing) {
+        _outputLevel = 0.0;
+        _activeOutputFrames.clear();
+      }
       _notifyListenersIfActive();
     });
+    _playerPositionSubscription = _audioPlayer.onPositionChanged.listen(
+      _handlePlayerPositionChanged,
+    );
   }
 
   final ProviderConfig _providerConfig;
@@ -60,9 +67,12 @@ class GeminiLiveSessionService extends ChangeNotifier {
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _subscription;
   StreamSubscription<PlayerState>? _playerStateSubscription;
+  StreamSubscription<Duration>? _playerPositionSubscription;
   Completer<void>? _setupCompleter;
 
   final List<String> _outputAudioParts = <String>[];
+  final List<_AudioLevelFrame> _pendingOutputFrames = <_AudioLevelFrame>[];
+  final List<_AudioLevelFrame> _activeOutputFrames = <_AudioLevelFrame>[];
   StringBuffer _textResponseBuffer = StringBuffer();
   String? _lastAudioFilePath;
 
@@ -72,6 +82,8 @@ class GeminiLiveSessionService extends ChangeNotifier {
   bool _awaitingModelTurn = false;
   bool _receivingInputTurn = false;
   bool _playingResponseAudio = false;
+  int _turnSequence = 0;
+  double _outputLevel = 0.0;
   String _status = 'Disconnected';
   String _inputTranscript = '';
   String _outputTranscript = '';
@@ -82,7 +94,10 @@ class GeminiLiveSessionService extends ChangeNotifier {
   bool get connecting => _connecting;
   bool get connected => _connected;
   bool get awaitingModelTurn => _awaitingModelTurn;
+  bool get receivingInputTurn => _receivingInputTurn;
   bool get playingResponseAudio => _playingResponseAudio;
+  int get turnSequence => _turnSequence;
+  double get outputLevel => _outputLevel;
   String get status => _status;
   String get inputTranscript => _inputTranscript;
   String get outputTranscript => _outputTranscript;
@@ -104,6 +119,8 @@ class GeminiLiveSessionService extends ChangeNotifier {
       );
     }
 
+    _turnSequence = 0;
+    _resetResponseBuffers();
     _connecting = true;
     _status = 'Connecting…';
     _lastError = null;
@@ -215,6 +232,11 @@ class GeminiLiveSessionService extends ChangeNotifier {
     _awaitingModelTurn = false;
     _receivingInputTurn = false;
     _playingResponseAudio = false;
+    _turnSequence = 0;
+    _outputLevel = 0.0;
+    _activeOutputFrames.clear();
+    _pendingOutputFrames.clear();
+    _resetResponseBuffers();
     _status = 'Disconnected';
     if (notify) {
       _notifyListenersIfActive();
@@ -226,9 +248,12 @@ class GeminiLiveSessionService extends ChangeNotifier {
     if (_isDisposed || trimmed.isEmpty) {
       return;
     }
+    _turnSequence++;
     _awaitingModelTurn = true;
+    _receivingInputTurn = false;
     _status = 'Waiting for Gemini…';
     _resetResponseBuffers();
+    _inputTranscript = trimmed;
     _notifyListenersIfActive();
     _send(<String, dynamic>{
       'realtimeInput': <String, dynamic>{'text': trimmed},
@@ -315,6 +340,9 @@ class GeminiLiveSessionService extends ChangeNotifier {
       _clearBufferedAudio();
       unawaited(_audioPlayer.stop());
       _awaitingModelTurn = false;
+      _receivingInputTurn = false;
+      _outputLevel = 0.0;
+      _activeOutputFrames.clear();
       _status = 'Interrupted';
     }
 
@@ -323,6 +351,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
     );
     if (inputTranscription != null) {
       if (!_receivingInputTurn && !_awaitingModelTurn) {
+        _turnSequence++;
         _receivingInputTurn = true;
         _resetResponseBuffers();
       }
@@ -360,6 +389,13 @@ class GeminiLiveSessionService extends ChangeNotifier {
           if (data.isNotEmpty) {
             _outputAudioParts.add(data);
             _audioMimeType = (inlineData['mimeType'] ?? '').toString();
+            final _AudioLevelFrame? frame = _buildAudioLevelFrame(
+              data,
+              _audioMimeType!,
+            );
+            if (frame != null) {
+              _pendingOutputFrames.add(frame);
+            }
           }
         }
       }
@@ -458,6 +494,12 @@ class GeminiLiveSessionService extends ChangeNotifier {
       final io.File file = io.File(path);
       await file.writeAsBytes(wavData, flush: true);
       _lastAudioFilePath = path;
+      _activeOutputFrames
+        ..clear()
+        ..addAll(_pendingOutputFrames);
+      _outputLevel = _activeOutputFrames.isEmpty
+          ? 0.0
+          : _activeOutputFrames.first.level;
       await _audioPlayer.play(DeviceFileSource(path));
     } catch (e) {
       _lastError = 'Audio playback failed: $e';
@@ -477,7 +519,31 @@ class GeminiLiveSessionService extends ChangeNotifier {
 
   void _clearBufferedAudio() {
     _outputAudioParts.clear();
+    _pendingOutputFrames.clear();
     _audioMimeType = null;
+  }
+
+  void _handlePlayerPositionChanged(Duration position) {
+    if (!_playingResponseAudio || _activeOutputFrames.isEmpty) {
+      return;
+    }
+
+    final int elapsedMs = position.inMilliseconds;
+    int consumedMs = 0;
+    double nextLevel = 0.0;
+    for (final _AudioLevelFrame frame in _activeOutputFrames) {
+      consumedMs += frame.durationMs;
+      if (elapsedMs <= consumedMs) {
+        nextLevel = frame.level;
+        break;
+      }
+    }
+
+    if ((nextLevel - _outputLevel).abs() < 0.015) {
+      return;
+    }
+    _outputLevel = nextLevel;
+    _notifyListenersIfActive();
   }
 
   Future<void> _deleteLastAudioFile() async {
@@ -610,6 +676,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
     _isDisposed = true;
     unawaited(disconnect(notify: false, stopAudio: false));
     unawaited(_playerStateSubscription?.cancel());
+    unawaited(_playerPositionSubscription?.cancel());
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -625,4 +692,62 @@ class _WavOptions {
   final int numChannels;
   final int sampleRate;
   final int bitsPerSample;
+}
+
+class _AudioLevelFrame {
+  const _AudioLevelFrame({required this.durationMs, required this.level});
+
+  final int durationMs;
+  final double level;
+}
+
+_AudioLevelFrame? _buildAudioLevelFrame(String data, String mimeType) {
+  try {
+    final Uint8List bytes = Uint8List.fromList(base64Decode(data));
+    if (bytes.isEmpty) {
+      return null;
+    }
+
+    final _WavOptions options = GeminiLiveSessionService._parseMimeType(
+      mimeType,
+    );
+    final int bytesPerSample = (options.bitsPerSample ~/ 8).clamp(1, 8);
+    final int totalSamples = bytes.length ~/ bytesPerSample;
+    if (totalSamples <= 0 || options.sampleRate <= 0) {
+      return null;
+    }
+
+    double peak = 0.0;
+    if (options.bitsPerSample == 16) {
+      final ByteData byteData = bytes.buffer.asByteData();
+      for (int offset = 0; offset + 1 < bytes.length; offset += 2) {
+        final int sample = byteData.getInt16(offset, Endian.little);
+        final double normalized = sample.abs() / 32768.0;
+        if (normalized > peak) {
+          peak = normalized;
+        }
+      }
+    } else {
+      for (final int sample in bytes) {
+        final double normalized = ((sample - 128).abs() / 128.0).clamp(
+          0.0,
+          1.0,
+        );
+        if (normalized > peak) {
+          peak = normalized;
+        }
+      }
+    }
+
+    final int durationMs = ((totalSamples / options.sampleRate) * 1000)
+        .round()
+        .clamp(24, 4000);
+
+    return _AudioLevelFrame(
+      durationMs: durationMs,
+      level: peak.clamp(0.0, 1.0),
+    );
+  } catch (_) {
+    return null;
+  }
 }

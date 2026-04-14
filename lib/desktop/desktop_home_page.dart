@@ -12,9 +12,13 @@ import 'dart:async';
 import 'hotkeys/hotkey_event_bus.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/assistant_provider.dart';
+import '../core/providers/settings_provider.dart';
+import '../core/models/assistant.dart';
 
 import 'hotkeys/chat_action_bus.dart';
 import 'package:finance_tracker/finance_tracker.dart';
+import '../features/assistant/widgets/gemini_live_surface.dart';
+import '../features/home/utils/model_display_helper.dart';
 
 /// Desktop home screen: left compact rail + main content.
 /// Phase 1 focuses on structure and platform-appropriate interactions/hover.
@@ -33,7 +37,8 @@ class DesktopHomePage extends StatefulWidget {
 }
 
 class _DesktopHomePageState extends State<DesktopHomePage> {
-  int _tabIndex = 0; // 0=Chat, 1=Translate, 2=Storage, 3=Settings, 4=Finance
+  int _tabIndex =
+      0; // 0=Chat, 1=Translate, 2=Storage, 3=Live, 4=Settings, 5=Finance
   bool _storageVisited = false;
 
   StreamSubscription<HotkeyAction>? _hotkeySub;
@@ -42,7 +47,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
   void initState() {
     super.initState();
     if (widget.initialTabIndex != null) {
-      _tabIndex = widget.initialTabIndex!.clamp(0, 4);
+      _tabIndex = widget.initialTabIndex!.clamp(0, 5);
     }
     _storageVisited = _tabIndex == 2;
     // 初始进入时如果就是聊天页，则聚焦聊天输入框
@@ -55,7 +60,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
     _hotkeySub = HotkeyEventBus.instance.stream.listen((action) async {
       switch (action) {
         case HotkeyAction.openSettings:
-          if (mounted) setState(() => _tabIndex = 3);
+          if (mounted) setState(() => _tabIndex = 4);
           break;
         case HotkeyAction.closeWindow:
           try {
@@ -124,7 +129,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
     final bool isFinanceAssistantSelected = assistantProvider
         .isFinanceAssistantId(assistantProvider.currentAssistantId);
     final int navActiveIndex = (_tabIndex == 0 && isFinanceAssistantSelected)
-        ? 5
+        ? 6
         : _tabIndex;
 
     return LayoutBuilder(
@@ -148,10 +153,11 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                 _tabIndex = 2;
                 _storageVisited = true;
               }),
+              onTapLive: () => setState(() => _tabIndex = 3),
               onTapSettings: () {
-                setState(() => _tabIndex = 3);
+                setState(() => _tabIndex = 4);
               },
-              onTapFinance: () => setState(() => _tabIndex = 4),
+              onTapFinance: () => setState(() => _tabIndex = 5),
               onTapFinanceAssistant: () async {
                 final ap = context.read<AssistantProvider>();
                 await ap.ensureDefaults(context);
@@ -180,6 +186,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                           embedded: true,
                         )
                       : const SizedBox.shrink(),
+                  const _DesktopLiveAssistantTab(),
                   DesktopSettingsPage(
                     key: const ValueKey('settings_page'),
                     initialProviderKey: widget.initialProviderKey,
@@ -241,6 +248,110 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
       _hotkeySub?.cancel();
     } catch (_) {}
     super.dispose();
+  }
+}
+
+class _DesktopLiveAssistantTab extends StatelessWidget {
+  const _DesktopLiveAssistantTab();
+
+  bool _isGeminiLiveCapable(ProviderConfig? config) {
+    if (config == null) {
+      return false;
+    }
+    if (config.apiKey.trim().isEmpty) {
+      return false;
+    }
+    final ProviderKind kind = ProviderConfig.classify(
+      config.id,
+      explicitType: config.providerType,
+    );
+    return kind == ProviderKind.google && config.vertexAI != true;
+  }
+
+  ProviderConfig? _resolveGeminiLiveConfig(
+    SettingsProvider settings,
+    Assistant? assistant,
+  ) {
+    final ProviderConfig? active = getActiveProviderConfig(
+      settings,
+      assistant: assistant,
+    );
+    if (_isGeminiLiveCapable(active)) {
+      return active;
+    }
+
+    for (final ProviderConfig config in settings.providerConfigs.values) {
+      if (_isGeminiLiveCapable(config)) {
+        return config;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final SettingsProvider settings = context.watch<SettingsProvider>();
+    final Assistant? assistant = context
+        .watch<AssistantProvider>()
+        .currentAssistant;
+    final ProviderConfig? liveConfig = _resolveGeminiLiveConfig(
+      settings,
+      assistant,
+    );
+    final ColorScheme cs = Theme.of(context).colorScheme;
+
+    if (liveConfig == null) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: cs.outlineVariant.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.graphic_eq_rounded, size: 36, color: cs.primary),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Live voice is not configured yet.',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Add a Google provider with a Gemini API key, then open this tab again.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GeminiLiveSurface(
+      providerConfig: liveConfig,
+      assistant: assistant,
+      modelId: 'gemini-3.1-flash-live-preview',
+      autoStart: false,
+      showHeader: true,
+    );
   }
 }
 

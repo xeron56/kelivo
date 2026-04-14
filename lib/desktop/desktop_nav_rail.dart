@@ -17,16 +17,18 @@ class DesktopNavRail extends StatelessWidget {
     required this.onTapChat,
     required this.onTapTranslate,
     required this.onTapStorage,
+    required this.onTapLive,
     required this.onTapSettings,
     required this.onTapFinance,
     required this.onTapFinanceAssistant,
   });
 
   final int
-  activeIndex; // 0=Chat,1=Translate,2=Storage,3=Settings,4=Finance,5=Finance Assistant
+  activeIndex; // 0=Chat,1=Translate,2=Storage,3=Live,4=Settings,5=Finance,6=Finance Assistant
   final VoidCallback onTapChat;
   final VoidCallback onTapTranslate;
   final VoidCallback onTapStorage;
+  final VoidCallback onTapLive;
   final VoidCallback onTapSettings;
   final VoidCallback onTapFinance;
   final VoidCallback onTapFinanceAssistant;
@@ -42,9 +44,10 @@ class DesktopNavRail extends StatelessWidget {
     final isChatActive = activeIndex == 0;
     final isTranslateActive = activeIndex == 1;
     final isStorageActive = activeIndex == 2;
-    final isSettingsActive = activeIndex == 3;
-    final isFinanceActive = activeIndex == 4;
-    final isFinanceAssistantActive = activeIndex == 5;
+    final isLiveActive = activeIndex == 3;
+    final isSettingsActive = activeIndex == 4;
+    final isFinanceActive = activeIndex == 5;
+    final isFinanceAssistantActive = activeIndex == 6;
 
     return Container(
       width: width,
@@ -79,6 +82,15 @@ class DesktopNavRail extends StatelessWidget {
             size: 40,
             iconSize: 18,
             iconColor: isStorageActive ? cs.primary : null,
+          ),
+          const SizedBox(height: 8),
+          _CircleAction(
+            tooltip: 'Live Voice',
+            icon: lucide.Lucide.AudioWaveform,
+            onTap: onTapLive,
+            size: 40,
+            iconSize: 18,
+            iconColor: isLiveActive ? cs.primary : null,
           ),
           const SizedBox(height: 8),
           _CircleAction(

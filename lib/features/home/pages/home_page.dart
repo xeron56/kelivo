@@ -82,7 +82,6 @@ class _HomePageState extends State<HomePage>
       GroqSpeechToTextService();
   bool _speechToTextRecording = false;
   bool _speechToTextTranscribing = false;
-  bool _liveModeOpen = false;
 
   // ============================================================================
   // Page Controller (manages all business logic and state)
@@ -399,42 +398,6 @@ class _HomePageState extends State<HomePage>
       }
     }
     return null;
-  }
-
-  Future<void> _openGeminiLiveMode() async {
-    final SettingsProvider settings = context.read<SettingsProvider>();
-    final Assistant? assistant = context
-        .read<AssistantProvider>()
-        .currentAssistant;
-    final ProviderConfig? config = _resolveGeminiLiveConfig(
-      settings,
-      assistant,
-    );
-
-    if (config == null) {
-      showAppSnackBar(
-        context,
-        message:
-            'Configure a Google provider with a Gemini API key to use live voice mode.',
-        type: NotificationType.warning,
-      );
-      return;
-    }
-
-    setState(() => _liveModeOpen = true);
-    try {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              GeminiLivePage(providerConfig: config, assistant: assistant),
-          fullscreenDialog: true,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _liveModeOpen = false);
-      }
-    }
   }
 
   // ============================================================================
@@ -879,6 +842,7 @@ class _HomePageState extends State<HomePage>
   Widget _buildChatInputBar(BuildContext context, {required bool isTablet}) {
     final settings = context.watch<SettingsProvider>();
     final assistant = context.watch<AssistantProvider>().currentAssistant;
+    final liveEnabled = _resolveGeminiLiveConfig(settings, assistant) != null;
     final activeCfg = getActiveProviderConfig(settings, assistant: assistant);
     final activeIsGroq =
         activeCfg != null &&
@@ -888,9 +852,6 @@ class _HomePageState extends State<HomePage>
             ) ==
             ProviderKind.groq;
     final sttEnabled = activeIsGroq && (activeCfg.speechToTextEnabled ?? false);
-    final liveConfig = _resolveGeminiLiveConfig(settings, assistant);
-    final liveEnabled = liveConfig != null;
-
     return ChatInputSection(
       inputBarKey: _inputBarKey,
       inputFocus: _inputFocus,
@@ -991,7 +952,7 @@ class _HomePageState extends State<HomePage>
       speechToTextTranscribing: _speechToTextTranscribing,
       onOpenLiveMode: liveEnabled ? _openGeminiLiveMode : null,
       liveModeEnabled: liveEnabled,
-      liveModeActive: _liveModeOpen,
+      liveModeActive: false,
     );
   }
 
@@ -1134,6 +1095,33 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _showLearningPromptSheet() async {
     await showLearningPromptSheet(context);
+  }
+
+  void _openGeminiLiveMode() {
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    final Assistant? assistant = context
+        .read<AssistantProvider>()
+        .currentAssistant;
+    final ProviderConfig? liveConfig = _resolveGeminiLiveConfig(
+      settings,
+      assistant,
+    );
+    if (liveConfig == null) {
+      showAppSnackBar(
+        context,
+        message:
+            'Configure a Google provider with a Gemini API key to use live mode.',
+        type: NotificationType.warning,
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            GeminiLivePage(providerConfig: liveConfig, assistant: assistant),
+      ),
+    );
   }
 
   void _toggleTools() async {
