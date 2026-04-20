@@ -355,7 +355,10 @@ class GeminiLiveSessionService extends ChangeNotifier {
         _receivingInputTurn = true;
         _resetResponseBuffers();
       }
-      _inputTranscript = (inputTranscription['text'] ?? '').toString();
+      _inputTranscript = _mergeTranscriptFragment(
+        current: _inputTranscript,
+        incoming: (inputTranscription['text'] ?? '').toString(),
+      );
     }
 
     final Map<String, dynamic>? outputTranscription = _asMap(
@@ -364,7 +367,10 @@ class GeminiLiveSessionService extends ChangeNotifier {
     if (outputTranscription != null) {
       _receivingInputTurn = false;
       _awaitingModelTurn = true;
-      _outputTranscript = (outputTranscription['text'] ?? '').toString();
+      _outputTranscript = _mergeTranscriptFragment(
+        current: _outputTranscript,
+        incoming: (outputTranscription['text'] ?? '').toString(),
+      );
     }
 
     final Map<String, dynamic>? modelTurn = _asMap(serverContent['modelTurn']);
@@ -595,6 +601,48 @@ class GeminiLiveSessionService extends ChangeNotifier {
       return value.cast<String, dynamic>();
     }
     return null;
+  }
+
+  static String _mergeTranscriptFragment({
+    required String current,
+    required String incoming,
+  }) {
+    final String existing = current.trim();
+    final String next = incoming.trim();
+
+    if (next.isEmpty) {
+      return existing;
+    }
+    if (existing.isEmpty) {
+      return next;
+    }
+    if (next == existing ||
+        next.startsWith(existing) ||
+        next.endsWith(existing)) {
+      return next;
+    }
+    if (existing.startsWith(next) || existing.endsWith(next)) {
+      return existing;
+    }
+
+    final int overlap = _suffixPrefixOverlap(existing, next);
+    if (overlap > 0) {
+      return '$existing${next.substring(overlap)}'.trim();
+    }
+
+    return next;
+  }
+
+  static int _suffixPrefixOverlap(String left, String right) {
+    final int maxOverlap = left.length < right.length
+        ? left.length
+        : right.length;
+    for (int size = maxOverlap; size > 0; size--) {
+      if (left.substring(left.length - size) == right.substring(0, size)) {
+        return size;
+      }
+    }
+    return 0;
   }
 
   static Uint8List _buildWav(List<String> rawData, String mimeType) {

@@ -179,6 +179,9 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
     bool shouldScroll = false;
 
     setState(() {
+      final String previousDraftUserText = _draftUserText;
+      final String previousDraftAssistantText = _draftAssistantText;
+
       if (turnSequence != _observedTurnSequence) {
         shouldScroll =
             _appendCommittedTurn(
@@ -212,6 +215,11 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
         shouldScroll = _finalizePendingTurn();
       }
 
+      if (_draftUserText != previousDraftUserText ||
+          _draftAssistantText != previousDraftAssistantText) {
+        shouldScroll = true;
+      }
+
       if (_sessionActive &&
           service != null &&
           !service.connected &&
@@ -237,7 +245,8 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
       if ((assistant?.systemPrompt ?? '').trim().isNotEmpty)
         assistant!.systemPrompt.trim(),
       'You are Kelivo live voice mode.',
-      'Keep spoken answers natural, short, and direct.',
+      'Keep spoken answers natural, short, direct, and complete.',
+      'Do not answer with clipped fragments or trailing partial phrases.',
       'Use any available tools when the user asks you to act inside the app or fetch live app data.',
       if (hasTools)
         'If a requested action is ambiguous, ask one short follow-up instead of guessing.',
@@ -662,50 +671,48 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
         ? widget.assistant!.name.trim()
         : 'Assistant';
 
-    final Widget content = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (widget.showHeader)
-          _LiveHeaderCard(
-            assistantName: assistantName,
-            modelId: widget.modelId,
-            statusLabel: _statusLabel(service),
-            statusMessage: _statusMessage(service, assistantName),
-            sessionActive: _sessionActive,
-            needsAttention: _microphoneError != null,
-          ),
-        if (widget.showHeader) const SizedBox(height: 14),
-        _InteractiveLiveCard(
-          assistantName: assistantName,
-          userSamples: _userWaveHistory,
-          assistantSamples: _assistantWaveHistory,
-          compact: widget.embedded,
-          sessionActive: _sessionActive,
-          userSpeaking: _userSpeaking,
-          assistantSpeaking: service?.playingResponseAudio == true,
-          thinking: service?.awaitingModelTurn == true,
-          initializing: _initializing,
-          onPrimaryAction: _toggleSession,
-          onRetry: (_microphoneError != null && !_initializing)
-              ? _retrySession
-              : null,
-          caption: _centerCaption(service, assistantName),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          height: widget.embedded ? 184 : 340,
-          child: _TranscriptPanel(
-            scrollController: _transcriptScrollController,
-            assistantName: assistantName,
-            turns: _transcriptTurns(),
-            compact: widget.embedded,
-          ),
-        ),
-      ],
-    );
-
     if (widget.embedded) {
-      return content;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.showHeader)
+            _LiveHeaderCard(
+              assistantName: assistantName,
+              modelId: widget.modelId,
+              statusLabel: _statusLabel(service),
+              statusMessage: _statusMessage(service, assistantName),
+              sessionActive: _sessionActive,
+              needsAttention: _microphoneError != null,
+            ),
+          if (widget.showHeader) const SizedBox(height: 14),
+          _InteractiveLiveCard(
+            assistantName: assistantName,
+            userSamples: _userWaveHistory,
+            assistantSamples: _assistantWaveHistory,
+            compact: true,
+            sessionActive: _sessionActive,
+            userSpeaking: _userSpeaking,
+            assistantSpeaking: service?.playingResponseAudio == true,
+            thinking: service?.awaitingModelTurn == true,
+            initializing: _initializing,
+            onPrimaryAction: _toggleSession,
+            onRetry: (_microphoneError != null && !_initializing)
+                ? _retrySession
+                : null,
+            caption: _centerCaption(service, assistantName),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 184,
+            child: _TranscriptPanel(
+              scrollController: _transcriptScrollController,
+              assistantName: assistantName,
+              turns: _transcriptTurns(),
+              compact: true,
+            ),
+          ),
+        ],
+      );
     }
 
     return DecoratedBox(
@@ -721,9 +728,82 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
         ),
       ),
       child: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: content,
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool splitLayout = constraints.maxWidth >= 980;
+              final Widget header = widget.showHeader
+                  ? _LiveHeaderCard(
+                      assistantName: assistantName,
+                      modelId: widget.modelId,
+                      statusLabel: _statusLabel(service),
+                      statusMessage: _statusMessage(service, assistantName),
+                      sessionActive: _sessionActive,
+                      needsAttention: _microphoneError != null,
+                    )
+                  : const SizedBox.shrink();
+              final Widget liveCard = _InteractiveLiveCard(
+                assistantName: assistantName,
+                userSamples: _userWaveHistory,
+                assistantSamples: _assistantWaveHistory,
+                compact: false,
+                sessionActive: _sessionActive,
+                userSpeaking: _userSpeaking,
+                assistantSpeaking: service?.playingResponseAudio == true,
+                thinking: service?.awaitingModelTurn == true,
+                initializing: _initializing,
+                onPrimaryAction: _toggleSession,
+                onRetry: (_microphoneError != null && !_initializing)
+                    ? _retrySession
+                    : null,
+                caption: _centerCaption(service, assistantName),
+              );
+              final Widget transcriptPanel = _TranscriptPanel(
+                scrollController: _transcriptScrollController,
+                assistantName: assistantName,
+                turns: _transcriptTurns(),
+                compact: false,
+              );
+
+              if (!splitLayout) {
+                return SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.showHeader) header,
+                      if (widget.showHeader) const SizedBox(height: 14),
+                      liveCard,
+                      const SizedBox(height: 14),
+                      SizedBox(height: 340, child: transcriptPanel),
+                    ],
+                  ),
+                );
+              }
+
+              final double rightPaneWidth = (constraints.maxWidth * 0.36).clamp(
+                340.0,
+                460.0,
+              );
+
+              return Column(
+                children: [
+                  if (widget.showHeader) header,
+                  if (widget.showHeader) const SizedBox(height: 14),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: transcriptPanel),
+                        const SizedBox(width: 14),
+                        SizedBox(width: rightPaneWidth, child: liveCard),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -1280,53 +1360,56 @@ class _CenterLiveButton extends StatelessWidget {
 
     return Column(
       children: [
-        InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: compact ? 76 : 92,
-            height: compact ? 76 : 92,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: sessionActive
-                    ? [
-                        cs.secondary.withValues(alpha: 0.92),
-                        cs.primary.withValues(alpha: 0.82),
-                      ]
-                    : [
-                        cs.primary.withValues(alpha: 0.92),
-                        cs.tertiary.withValues(alpha: 0.72),
-                      ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: (sessionActive ? cs.secondary : cs.primary).withValues(
-                    alpha: 0.20,
-                  ),
-                  blurRadius: 28,
-                  spreadRadius: 2,
+        Material(
+          type: MaterialType.transparency,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: compact ? 76 : 92,
+              height: compact ? 76 : 92,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: sessionActive
+                      ? [
+                          cs.secondary.withValues(alpha: 0.92),
+                          cs.primary.withValues(alpha: 0.82),
+                        ]
+                      : [
+                          cs.primary.withValues(alpha: 0.92),
+                          cs.tertiary.withValues(alpha: 0.72),
+                        ],
                 ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: initializing
-                ? SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.6,
-                      valueColor: AlwaysStoppedAnimation<Color>(cs.onPrimary),
-                    ),
-                  )
-                : Icon(
-                    sessionActive ? LucideIcons.square : LucideIcons.mic,
-                    color: cs.onPrimary,
-                    size: compact ? 24 : 28,
+                boxShadow: [
+                  BoxShadow(
+                    color: (sessionActive ? cs.secondary : cs.primary)
+                        .withValues(alpha: 0.20),
+                    blurRadius: 28,
+                    spreadRadius: 2,
                   ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: initializing
+                  ? SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.6,
+                        valueColor: AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                      ),
+                    )
+                  : Icon(
+                      sessionActive ? LucideIcons.square : LucideIcons.mic,
+                      color: cs.onPrimary,
+                      size: compact ? 24 : 28,
+                    ),
+            ),
           ),
         ),
         SizedBox(height: compact ? 8 : 10),
