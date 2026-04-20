@@ -214,7 +214,6 @@ class InsightsViewmodel extends ChangeNotifier {
       }
 
       addToFilter(eDate: eDate, sDate: sDate);
-      notifyListeners();
     }
   }
 
@@ -257,8 +256,6 @@ class InsightsViewmodel extends ChangeNotifier {
 
     expenseTotals = {for (var k in _expenses) k: 0};
     incomeTotals = {for (var k in _incomes) k: 0};
-
-    notifyListeners();
   }
 
   _getTransactions() async {
@@ -267,7 +264,6 @@ class InsightsViewmodel extends ChangeNotifier {
         startDate: startDate,
         endDate: endDate,
         profileId: _selectedProfile.dbID);
-    notifyListeners();
   }
 
   _getBudgets() async {
@@ -302,15 +298,13 @@ class InsightsViewmodel extends ChangeNotifier {
       return;
     }
 
-    notifyListeners();
-
     if (shouldGetData) {
       await getData();
     }
     await _calculate();
     notifyListeners();
-    setExpCardPage(0);
-    setDailyCardPage(0);
+    await animateToExpCardPage(0);
+    await animateToDailyCardPage(0);
   }
 
   _calculateTotalExpenses() {
@@ -369,7 +363,6 @@ class InsightsViewmodel extends ChangeNotifier {
     incomeTotals = {for (var k in _incomes) k: 0};
     expenseTotal = expenseTotals.values.sum;
 
-    notifyListeners();
   }
 
   _populateWeekDayExpenses() {
@@ -380,7 +373,6 @@ class InsightsViewmodel extends ChangeNotifier {
         weeklyAvgExpenses[weekDay]?.add(k.paymentsTotal.toCurrency().toInt());
       }
     }
-    notifyListeners();
   }
 
   populateBudgetUsage() {
@@ -389,20 +381,30 @@ class InsightsViewmodel extends ChangeNotifier {
 
   _setBalances() async {
     fundBalances = {};
-    for (var f in _funds) {
-      if (!selectedFundsForBalanceChart.contains(f.dbID)) {
-        fundBalances.addAll({f: []});
-      }
+    final visibleFunds = _funds
+        .where((fund) => !selectedFundsForBalanceChart.contains(fund.dbID))
+        .toList();
+
+    if (visibleFunds.isEmpty || _rangeDates.isEmpty) {
+      return;
     }
 
-    for (var d in _rangeDates) {
-      for (var f in _funds) {
-        fundBalances[f]?.add(await _balancesRepository.getClosingBalance(
-            account: f.dbID, closingDate: d));
-      }
-    }
+    final balanceEntries = await Future.wait(
+      visibleFunds.map((fund) async {
+        final balances = <int>[];
+        for (final date in _rangeDates) {
+          balances.add(
+            await _balancesRepository.getClosingBalance(
+              account: fund.dbID,
+              closingDate: date,
+            ),
+          );
+        }
+        return MapEntry(fund, balances);
+      }),
+    );
 
-    notifyListeners();
+    fundBalances = Map<Account, List<int>>.fromEntries(balanceEntries);
   }
 
   _setLegends() {
@@ -413,8 +415,6 @@ class InsightsViewmodel extends ChangeNotifier {
     _dailyTotalTransactions = List.from(
       _rangeDates.map((d) => DailyTotalTransaction(dateTime: d)),
     );
-
-    notifyListeners();
   }
 
   void resetErrorText() {
@@ -431,8 +431,6 @@ class InsightsViewmodel extends ChangeNotifier {
   void setExpCardPage(int index) {
     if (_expCardPage != index) {
       _expCardPage = index;
-      _expCardpageController.animateToPage(index,
-          duration: Durations.medium1, curve: Curves.bounceIn);
       notifyListeners();
     }
   }
@@ -440,11 +438,30 @@ class InsightsViewmodel extends ChangeNotifier {
   void setDailyCardPage(int index) {
     if (index != _dailyCardPage) {
       _dailyCardPage = index;
-      _dailyCardpageController.jumpToPage(
-        index,
-      );
       notifyListeners();
     }
+  }
+
+  Future<void> animateToExpCardPage(int index) async {
+    if (_expCardpageController.hasClients) {
+      await _expCardpageController.animateToPage(
+        index,
+        duration: Durations.short4,
+        curve: Curves.easeOut,
+      );
+    }
+    setExpCardPage(index);
+  }
+
+  Future<void> animateToDailyCardPage(int index) async {
+    if (_dailyCardpageController.hasClients) {
+      await _dailyCardpageController.animateToPage(
+        index,
+        duration: Durations.short4,
+        curve: Curves.easeOut,
+      );
+    }
+    setDailyCardPage(index);
   }
 
   @override
@@ -454,4 +471,3 @@ class InsightsViewmodel extends ChangeNotifier {
     super.dispose();
   }
 }
-

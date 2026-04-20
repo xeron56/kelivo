@@ -358,6 +358,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
       _inputTranscript = _mergeTranscriptFragment(
         current: _inputTranscript,
         incoming: (inputTranscription['text'] ?? '').toString(),
+        concatenateOnNoOverlap: true,
       );
     }
 
@@ -370,6 +371,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
       _outputTranscript = _mergeTranscriptFragment(
         current: _outputTranscript,
         incoming: (outputTranscription['text'] ?? '').toString(),
+        concatenateOnNoOverlap: true,
       );
     }
 
@@ -606,6 +608,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
   static String _mergeTranscriptFragment({
     required String current,
     required String incoming,
+    bool concatenateOnNoOverlap = false,
   }) {
     final String existing = current.trim();
     final String next = incoming.trim();
@@ -630,7 +633,40 @@ class GeminiLiveSessionService extends ChangeNotifier {
       return '$existing${next.substring(overlap)}'.trim();
     }
 
+    if (concatenateOnNoOverlap) {
+      return _joinTranscriptChunks(existing, next);
+    }
+
     return next;
+  }
+
+  static String _joinTranscriptChunks(String left, String right) {
+    if (left.isEmpty) {
+      return right;
+    }
+    if (right.isEmpty) {
+      return left;
+    }
+
+    final bool needsSpace =
+        !_endsWithJoinPunctuation(left) && !_startsWithJoinPunctuation(right);
+    return needsSpace ? '$left $right' : '$left$right';
+  }
+
+  static bool _endsWithJoinPunctuation(String value) {
+    if (value.isEmpty) {
+      return false;
+    }
+    const String punctuation = " \t\r\n([{'\":/-";
+    return punctuation.contains(value[value.length - 1]);
+  }
+
+  static bool _startsWithJoinPunctuation(String value) {
+    if (value.isEmpty) {
+      return false;
+    }
+    const String punctuation = " \t\r\n)]}\",.!?:;/-";
+    return punctuation.contains(value[0]);
   }
 
   static int _suffixPrefixOverlap(String left, String right) {

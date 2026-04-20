@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:finance_tracker/app/global/colors.dart';
 import 'package:finance_tracker/app/global/dimensions.dart';
-import 'package:finance_tracker/app/extensions/currency.dart';
-import 'package:finance_tracker/viewmodels/insights_viewmodel.dart';
 import 'package:finance_tracker/l10n/generated/app_localizations.dart';
-import 'package:finance_tracker/widgets/shared/the_divider.dart';
+import 'package:finance_tracker/viewmodels/insights_viewmodel.dart';
 
 class FundBalancesLineChartCard extends StatelessWidget {
   const FundBalancesLineChartCard({
@@ -19,162 +17,252 @@ class FundBalancesLineChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (_) => Builder(builder: (context) {
-            return StatefulBuilder(builder: (context, setState) {
-              return SimpleDialog(
-                title: Text(AppLocalizations.of(context)!.funds),
-                children: [
-                  ...viewmodel.funds.mapIndexed((i, f) {
-                    return CheckboxListTile(
-                        title: Row(
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 5),
-                              width: 15,
-                              height: 15,
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: materialColors.reversed.toList()[i]),
-                            ),
-                            Text(f.name),
-                          ],
-                        ),
-                        value: !viewmodel.selectedFundsForBalanceChart
-                            .contains(f.dbID),
-                        onChanged: (_) {
-                          viewmodel.addToFilter(a: f.dbID);
-                          setState(() {});
-                        });
-                  }),
-                  const SizedBox(
-                    height: 12,
-                  )
-                ],
-              );
-            });
-          }),
-        );
-      },
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: cardWidth,
+    final theme = Theme.of(context);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: cardWidth),
+      child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(26),
+          side: const BorderSide(color: Color(0xFFE7E7EC)),
         ),
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Column(
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  child: Row(
-                    children: [
-                      const Expanded(child: TheDivider()),
-                      Text(
-                        AppLocalizations.of(context)!.fundsBalance,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const Expanded(child: TheDivider()),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 6,
-                ),
-                Container(
-                  height: 200,
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Theme.of(context).scaffoldBackgroundColor,
-                          Theme.of(context)
-                              .scaffoldBackgroundColor
-                              .withAlpha(100)
-                        ]),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: LineChart(LineChartData(
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(),
-                        leftTitles: const AxisTitles(),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (double value, TitleMeta meta) {
-                              // Format date from your list
-                              final dateIndex =
-                                  value.toInt(); // Convert X value to index
-                              if (dateIndex >= 0 &&
-                                  dateIndex < viewmodel.rangeDates.length) {
-                                final date = viewmodel.rangeDates[dateIndex];
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    ("${date.day}"), // Use a formatter for your date
-                                    style:
-                                        Theme.of(context).textTheme.labelSmall,
-                                  ),
-                                );
-                              }
-                              return const SizedBox();
-                            },
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.fundsBalance,
+                          style:
+                              theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Review how each fund balance moved during the selected date range.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFF6B6B80),
                           ),
                         ),
-                      ),
-                      borderData: FlBorderData(show: false),
-                      lineBarsData: [
-                        ...viewmodel.fundBalances.entries.mapIndexed(
-                          (x, f) {
-                            final mRevColors = materialColors.reversed.toList();
-                            return LineChartBarData(
-                              curveSmoothness: 0.05,
-                              spots: [
-                                ...f.value.mapIndexed((i, b) => FlSpot(
-                                    i.toDouble(),
-                                    b.toCurrency().roundToDouble()))
-                              ],
-                              isCurved: true,
-                              gradient: LinearGradient(
-                                colors: [
-                                  mRevColors[x].withAlpha(150),
-                                  mRevColors[x],
-                                ],
-                              ),
-                              dotData: const FlDotData(show: false),
-                              aboveBarData: BarAreaData(
-                                show: true,
-                                color: Colors.red.shade200,
-                                applyCutOffY: true,
-                              ),
-                            );
-                          },
-                        )
                       ],
-                    )),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _openFundSelector(context),
+                    icon: const Icon(Icons.tune_rounded, size: 18),
+                    label: const Text('Funds'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: viewmodel.fundBalances.keys.mapIndexed((index, fund) {
+                  final color = materialColors.reversed.toList()[
+                      index % materialColors.length];
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F8FC),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: const Color(0xFFE7E7EC)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          fund.name,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 18),
+              Container(
+                height: 260,
+                padding: const EdgeInsets.fromLTRB(12, 18, 12, 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F8FC),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0xFFE7E7EC)),
+                ),
+                child: LineChart(
+                  LineChartData(
+                    lineTouchData: const LineTouchData(enabled: false),
+                    gridData: FlGridData(
+                      drawVerticalLine: false,
+                      horizontalInterval: 1,
+                      getDrawingHorizontalLine: (_) => const FlLine(
+                        color: Color(0xFFE7E7EC),
+                        strokeWidth: 1,
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      topTitles: const AxisTitles(),
+                      rightTitles: const AxisTitles(),
+                      leftTitles: const AxisTitles(),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          getTitlesWidget: (value, meta) {
+                            final dateIndex = value.toInt();
+                            if (dateIndex >= 0 &&
+                                dateIndex < viewmodel.rangeDates.length) {
+                              final date = viewmodel.rangeDates[dateIndex];
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '${date.day}',
+                                  style: theme.textTheme.labelSmall,
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: viewmodel.fundBalances.entries.mapIndexed((
+                      index,
+                      entry,
+                    ) {
+                      final color = materialColors.reversed.toList()[
+                          index % materialColors.length];
+                      return LineChartBarData(
+                        curveSmoothness: 0.18,
+                        isCurved: true,
+                        barWidth: 3,
+                        spots: entry.value.mapIndexed((spotIndex, balance) {
+                          return FlSpot(
+                            spotIndex.toDouble(),
+                            balance.toDouble(),
+                          );
+                        }).toList(),
+                        color: color,
+                        gradient: LinearGradient(
+                          colors: [color.withAlpha(150), color],
+                        ),
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              color.withAlpha(40),
+                              color.withAlpha(0),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
-                const SizedBox(
-                  height: 16,
-                )
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     )
         .animate(delay: 100.ms)
-        .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
-        .fade(curve: Curves.easeInOut, duration: 100.ms);
+        .scale(begin: const Offset(1.02, 1.02), duration: 120.ms)
+        .fade(curve: Curves.easeInOut, duration: 120.ms);
+  }
+
+  void _openFundSelector(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.funds,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Hide or show funds in the balance trend chart.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF6B6B80),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ...viewmodel.funds.mapIndexed((index, fund) {
+                      final color = materialColors.reversed.toList()[
+                          index % materialColors.length];
+                      return CheckboxListTile(
+                        value: !viewmodel.selectedFundsForBalanceChart
+                            .contains(fund.dbID),
+                        contentPadding: EdgeInsets.zero,
+                        title: Row(
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: color,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(fund.name)),
+                          ],
+                        ),
+                        onChanged: (_) {
+                          viewmodel.addToFilter(a: fund.dbID);
+                          setState(() {});
+                        },
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
-
-

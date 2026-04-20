@@ -18,43 +18,50 @@ import 'package:finance_tracker/viewmodels/balances_viewmodel.dart';
 import 'package:finance_tracker/widgets/shared/acc_type_dialog.dart';
 import 'package:finance_tracker/widgets/shared/acc_type_icon.dart';
 import 'package:finance_tracker/widgets/shared/loading_body.dart';
-import 'package:finance_tracker/widgets/shared/the_divider.dart';
 import 'package:finance_tracker/l10n/generated/app_localizations.dart';
 
 class BalancesScreen extends StatelessWidget {
-  const BalancesScreen({
-    super.key,
-    required this.profile,
-  });
+  const BalancesScreen({super.key, required this.profile});
   final Profile profile;
 
   @override
   Widget build(BuildContext context) {
     final accountTypesDriftRepository =
         Provider.of<AccountTypesDriftRepository>(context, listen: false);
-    final accountsDriftRepository =
-        Provider.of<AccountsDriftRepository>(context, listen: false);
-    final banksDriftRepository =
-        Provider.of<BanksDriftRepository>(context, listen: false);
-    final cCardsDriftRepository =
-        Provider.of<CCardsDriftRepository>(context, listen: false);
-    final loansDriftRepository =
-        Provider.of<LoansDriftRepository>(context, listen: false);
-    final walletsDriftRepository =
-        Provider.of<WalletsDriftRepository>(context, listen: false);
+    final accountsDriftRepository = Provider.of<AccountsDriftRepository>(
+      context,
+      listen: false,
+    );
+    final banksDriftRepository = Provider.of<BanksDriftRepository>(
+      context,
+      listen: false,
+    );
+    final cCardsDriftRepository = Provider.of<CCardsDriftRepository>(
+      context,
+      listen: false,
+    );
+    final loansDriftRepository = Provider.of<LoansDriftRepository>(
+      context,
+      listen: false,
+    );
+    final walletsDriftRepository = Provider.of<WalletsDriftRepository>(
+      context,
+      listen: false,
+    );
 
     return ChangeNotifierProvider<BalancesViewmodel>(
       create: (context) => BalancesViewmodel(
-          accountsDriftRepository,
-          accountTypesDriftRepository,
-          banksDriftRepository,
-          cCardsDriftRepository,
-          loansDriftRepository,
-          walletsDriftRepository,
-          profile: profile)
-        ..init(),
+        accountsDriftRepository,
+        accountTypesDriftRepository,
+        banksDriftRepository,
+        cCardsDriftRepository,
+        loansDriftRepository,
+        walletsDriftRepository,
+        profile: profile,
+      )..init(),
       builder: (context, child) => Consumer<BalancesViewmodel>(
         builder: (context, viewmodel, child) => Scaffold(
+          backgroundColor: const Color(0xFFF7F7FA),
           body: LoadingBody(
             resetErrorTextFn: () => viewmodel.resetErrorText(),
             loadingStatus: viewmodel.loadingStatus,
@@ -65,111 +72,108 @@ class BalancesScreen extends StatelessWidget {
                 final isVeryWide = constraints.maxWidth > mediumWidth;
 
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 50, left: 4, right: 4),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                   child: Column(
                     crossAxisAlignment: isVeryWide
                         ? CrossAxisAlignment.start
                         : CrossAxisAlignment.center,
                     children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Text(
-                            AppLocalizations.of(context)!.myFunds,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
+                      _SurfaceCard(
+                        padding: const EdgeInsets.all(22),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppLocalizations.of(context)!.myFunds,
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              AppLocalizations.of(context)!.otherAccounts,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.color
+                                        ?.withValues(alpha: 0.75),
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        runAlignment: WrapAlignment.center,
-                        children: [
-                          ...viewmodel.fundAccountTypes.map((a) => FundsCard(
+                      const SizedBox(height: 18),
+                      _BalanceSection(
+                        title: AppLocalizations.of(context)!.myFunds,
+                        child: Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.start,
+                          children: [
+                            ...viewmodel.fundAccountTypes.map(
+                              (a) => FundsCard(
                                 accountType: a,
                                 profile: profile,
                                 viewmodel: viewmodel,
-                                width: isWide ? 400 : null,
+                                width: isWide ? 420 : null,
                                 balanceAccounts: viewmodel.funds
-                                    .where((ac) =>
-                                        ac.account.accountType == a.dbID)
+                                    .where(
+                                      (ac) => ac.account.accountType == a.dbID,
+                                    )
                                     .toList(),
-                              )),
-                        ],
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
-                        child: TheDivider(
-                          indent: 0,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Text(
-                            AppLocalizations.of(context)!.myCredits,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                        ),
-                      ),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        runAlignment: WrapAlignment.center,
-                        children: [
-                          ...viewmodel.creditAccountTypes.map((a) => FundsCard(
+                      const SizedBox(height: 18),
+                      _BalanceSection(
+                        title: AppLocalizations.of(context)!.myCredits,
+                        child: Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            ...viewmodel.creditAccountTypes.map(
+                              (a) => FundsCard(
                                 accountType: a,
                                 profile: profile,
                                 viewmodel: viewmodel,
-                                width: isWide ? 400 : null,
+                                width: isWide ? 420 : null,
                                 balanceAccounts: viewmodel.credits
-                                    .where((ac) =>
-                                        ac.account.accountType == a.dbID)
+                                    .where(
+                                      (ac) => ac.account.accountType == a.dbID,
+                                    )
                                     .toList(),
-                              )),
-                        ],
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
-                        child: TheDivider(
-                          indent: 0,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Text(
-                            AppLocalizations.of(context)!.otherAccounts,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                        ),
-                      ),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        runAlignment: WrapAlignment.center,
-                        children: [
-                          ...viewmodel.otherAccountAccountTypes
-                              .map((a) => FundsCard(
-                                    accountType: a,
-                                    profile: profile,
-                                    viewmodel: viewmodel,
-                                    width: isWide ? 400 : null,
-                                    balanceAccounts: viewmodel.otherAccounts
-                                        .where((ac) =>
-                                            ac.account.accountType == a.dbID)
-                                        .toList(),
-                                  )),
-                        ],
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
-                        child: TheDivider(
-                          indent: 0,
+                      const SizedBox(height: 18),
+                      _BalanceSection(
+                        title: AppLocalizations.of(context)!.otherAccounts,
+                        child: Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            ...viewmodel.otherAccountAccountTypes.map(
+                              (a) => FundsCard(
+                                accountType: a,
+                                profile: profile,
+                                viewmodel: viewmodel,
+                                width: isWide ? 420 : null,
+                                balanceAccounts: viewmodel.otherAccounts
+                                    .where(
+                                      (ac) => ac.account.accountType == a.dbID,
+                                    )
+                                    .toList(),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -222,100 +226,217 @@ class FundsCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(0.0),
       child: SizedBox(
-          width: width,
-          child: Card(
-            elevation: 1.4,
-            shape: RoundedRectangleBorder(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              side:
-                  BorderSide(color: Theme.of(context).primaryColor, width: 0.4),
-            ),
-            child: InkWell(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              onTap: () {
-                if (balanceAccounts.isEmpty) {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AccountEntryScreen(
-                          profile: profile,
-                          accountType: accountType,
-                        ),
-                      )).then((_) {
-                    viewmodel.init();
-                  });
-                }
-              },
-              child: ExpansionTile(
-                enabled: balanceAccounts.isNotEmpty,
-                initiallyExpanded: balanceAccounts.isNotEmpty,
-                minTileHeight: 64,
-                leading: Icon(
-                  getAccTypeIcon(accountType.dbID),
-                  color: Theme.of(context).textTheme.titleMedium?.color,
-                ),
-                backgroundColor: Theme.of(context).cardColor,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
-                collapsedShape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                title: Text(
-                  accountType.name,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                trailing: Text(
-                  balance.toCurrencyStringWSymbol(profile.currency),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                children: [
-                  const TheDivider(
-                    indent: 0,
+        width: width,
+        child:
+            Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.all(Radius.circular(22)),
+                    border: Border.all(color: const Color(0xFFE5E8F0)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x120F172A),
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  ...balanceAccounts.map((f) {
-                    return ListTile(
-                      shape: Border(
-                          bottom: BorderSide(
-                              color: Theme.of(context).shadowColor,
-                              width: 0.10)),
-                      title: Text(
-                        f.account.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                  child: InkWell(
+                    borderRadius: const BorderRadius.all(Radius.circular(22)),
+                    onTap: () {
+                      if (balanceAccounts.isEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AccountEntryScreen(
+                              profile: profile,
+                              accountType: accountType,
+                            ),
+                          ),
+                        ).then((_) {
+                          viewmodel.init();
+                        });
+                      }
+                    },
+                    child: ExpansionTile(
+                      enabled: balanceAccounts.isNotEmpty,
+                      initiallyExpanded: balanceAccounts.isNotEmpty,
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 8,
                       ),
-                      trailing: Text(
-                        f.balance.toCurrencyString(profile.currency),
-                        style: Theme.of(context).textTheme.bodyLarge,
+                      childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                      minTileHeight: 76,
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: .08),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(
+                          getAccTypeIcon(accountType.dbID),
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
-                      onTap: () async {
-                        if (context.mounted) {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BalanceAccountScreen(
-                                  profile: profile,
-                                  account: f.account,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(22)),
+                      ),
+                      collapsedShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            accountType.name,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            balanceAccounts.isEmpty
+                                ? AppLocalizations.of(context)!.add
+                                : "${balanceAccounts.length} ${AppLocalizations.of(context)!.accounts}",
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color
+                                      ?.withValues(alpha: 0.75),
                                 ),
-                              )).then((_) {
-                            viewmodel.init();
-                          });
-                        }
-                      },
-                    );
-                  }),
-                  const SizedBox(
-                    height: 12,
-                  )
-                ],
-              ),
-            ),
-          )
-              .animate()
-              .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
-              .fade(curve: Curves.easeInOut, duration: 100.ms)),
+                          ),
+                        ],
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF6F7FB),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE6E8EF)),
+                        ),
+                        child: Text(
+                          balance.toCurrencyStringWSymbol(profile.currency),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      children: [
+                        ...balanceAccounts.map((f) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFBFBFD),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE8EAF1),
+                              ),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 2,
+                              ),
+                              title: Text(
+                                f.account.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              trailing: Text(
+                                f.balance.toCurrencyString(profile.currency),
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              onTap: () async {
+                                if (context.mounted) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          BalanceAccountScreen(
+                                            profile: profile,
+                                            account: f.account,
+                                          ),
+                                    ),
+                                  ).then((_) {
+                                    viewmodel.init();
+                                  });
+                                }
+                              },
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                )
+                .animate()
+                .scale(begin: const Offset(1.02, 1.02), duration: 100.ms)
+                .fade(curve: Curves.easeInOut, duration: 100.ms),
+      ),
     );
   }
 }
 
+class _SurfaceCard extends StatelessWidget {
+  const _SurfaceCard({required this.child, this.padding});
 
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE6E8EF)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _BalanceSection extends StatelessWidget {
+  const _BalanceSection({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SurfaceCard(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}

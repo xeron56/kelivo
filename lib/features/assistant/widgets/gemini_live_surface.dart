@@ -70,7 +70,6 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
   double _inputLevel = 0.0;
   DateTime? _lastInputFrameAt;
   int _observedTurnSequence = 0;
-  String _draftUserText = '';
   String _draftAssistantText = '';
 
   @override
@@ -172,32 +171,22 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
     final bool receivingInputTurn = service?.receivingInputTurn ?? false;
     final bool playingResponseAudio = service?.playingResponseAudio ?? false;
     final int turnSequence = service?.turnSequence ?? _observedTurnSequence;
-    final String liveUserText = service?.inputTranscript.trim() ?? '';
     final String liveAssistantText = service == null
         ? ''
         : _assistantText(service).trim();
     bool shouldScroll = false;
 
     setState(() {
-      final String previousDraftUserText = _draftUserText;
       final String previousDraftAssistantText = _draftAssistantText;
 
       if (turnSequence != _observedTurnSequence) {
-        shouldScroll =
-            _appendCommittedTurn(
-              userText: _draftUserText,
-              assistantText: _draftAssistantText,
-            ) ||
-            shouldScroll;
-        _draftUserText = '';
+        // Do not commit on sequence change; the completed assistant reply is
+        // committed only once when the turn actually finishes.
         _draftAssistantText = '';
         _pendingTurnReady = false;
         _observedTurnSequence = turnSequence;
       }
 
-      if (liveUserText.isNotEmpty) {
-        _draftUserText = liveUserText;
-      }
       if (receivingInputTurn) {
         _draftAssistantText = '';
       } else if (liveAssistantText.isNotEmpty) {
@@ -215,8 +204,8 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
         shouldScroll = _finalizePendingTurn();
       }
 
-      if (_draftUserText != previousDraftUserText ||
-          _draftAssistantText != previousDraftAssistantText) {
+      if (_draftAssistantText != previousDraftAssistantText &&
+          !_pendingTurnReady) {
         shouldScroll = true;
       }
 
@@ -318,7 +307,6 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
       _lastAwaitingModelTurn = false;
       _lastPlayingResponseAudio = false;
       _pendingTurnReady = false;
-      _draftUserText = '';
       _draftAssistantText = '';
       _userWaveHistory.fillRange(0, _userWaveHistory.length, 0.0);
       _assistantWaveHistory.fillRange(0, _assistantWaveHistory.length, 0.0);
@@ -486,22 +474,18 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
       ..add(value);
   }
 
-  bool _appendCommittedTurn({
-    required String userText,
-    required String assistantText,
-  }) {
-    final String user = userText.trim();
+  bool _appendCommittedTurn({required String assistantText}) {
     final String assistant = assistantText.trim();
-    if (user.isEmpty && assistant.isEmpty) {
+    if (assistant.isEmpty) {
+      return false;
+    }
+
+    if (_turns.isNotEmpty && _turns.last.assistantText.trim() == assistant) {
       return false;
     }
 
     _turns.add(
-      _LiveTranscriptTurn(
-        userText: user,
-        assistantText: assistant,
-        timestamp: DateTime.now(),
-      ),
+      _LiveTranscriptTurn(assistantText: assistant, timestamp: DateTime.now()),
     );
     if (_turns.length > 24) {
       _turns.removeAt(0);
@@ -511,10 +495,8 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
 
   bool _finalizePendingTurn() {
     final bool committed = _appendCommittedTurn(
-      userText: _draftUserText,
       assistantText: _draftAssistantText,
     );
-    _draftUserText = '';
     _draftAssistantText = '';
     _pendingTurnReady = false;
     return committed;
@@ -563,10 +545,21 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
 
   String _assistantText(GeminiLiveSessionService service) {
     final String transcript = service.outputTranscript.trim();
-    if (transcript.isNotEmpty) {
+    final String streamedText = service.lastTextResponse.trim();
+
+    if (streamedText.isEmpty) {
       return transcript;
     }
-    return service.lastTextResponse.trim();
+    if (transcript.isEmpty) {
+      return streamedText;
+    }
+    if (streamedText.contains(transcript)) {
+      return streamedText;
+    }
+    if (transcript.contains(streamedText)) {
+      return transcript;
+    }
+    return streamedText.length >= transcript.length ? streamedText : transcript;
   }
 
   String _statusLabel(GeminiLiveSessionService? service) {
@@ -620,7 +613,6 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
     GeminiLiveSessionService? service,
     String assistantName,
   ) {
-    final String liveUserText = _draftUserText.trim();
     final String liveAssistantText = _draftAssistantText.trim();
 
     if (!_sessionActive) {
@@ -631,9 +623,6 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
     }
     if (service?.playingResponseAudio == true && liveAssistantText.isNotEmpty) {
       return liveAssistantText;
-    }
-    if (_userSpeaking && liveUserText.isNotEmpty) {
-      return liveUserText;
     }
     if (service?.awaitingModelTurn == true) {
       return liveAssistantText.isNotEmpty
@@ -647,12 +636,11 @@ class _GeminiLiveSurfaceState extends State<GeminiLiveSurface> {
     final List<_LiveTranscriptTurn> turns = List<_LiveTranscriptTurn>.of(
       _turns,
     );
-    if (_draftUserText.trim().isNotEmpty ||
-        _draftAssistantText.trim().isNotEmpty) {
+    final String liveAssistantText = _draftAssistantText.trim();
+    if (liveAssistantText.isNotEmpty) {
       turns.add(
         _LiveTranscriptTurn(
-          userText: _draftUserText.trim(),
-          assistantText: _draftAssistantText.trim(),
+          assistantText: liveAssistantText,
           timestamp: DateTime.now(),
           isLive: true,
         ),
@@ -1079,7 +1067,9 @@ class _TranscriptPanel extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  turns.isEmpty ? 'No live turns yet' : 'Separated by speaker',
+                  turns.isEmpty
+                      ? 'No assistant replies yet'
+                      : 'Live assistant stream',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
@@ -1094,7 +1084,7 @@ class _TranscriptPanel extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        'Start live mode to capture voice turns here. Your speech and the assistant response stay in separate sections.',
+                        'Start live mode to capture completed assistant replies here.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: cs.onSurfaceVariant,
@@ -1165,32 +1155,26 @@ class _TranscriptTurnCard extends StatelessWidget {
               Icon(
                 turn.isLive ? LucideIcons.activity : LucideIcons.history,
                 size: 16,
-                color: cs.onSurfaceVariant,
+                color: turn.isLive ? cs.primary : cs.onSurfaceVariant,
               ),
               const SizedBox(width: 8),
               Text(
-                turn.isLive ? 'Live turn' : _formatTimestamp(turn.timestamp),
+                turn.isLive
+                    ? 'Streaming now'
+                    : _formatTimestamp(turn.timestamp),
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: cs.onSurfaceVariant,
+                  color: turn.isLive ? cs.primary : cs.onSurfaceVariant,
                 ),
               ),
             ],
           ),
-          if (turn.userText.isNotEmpty) ...[
+          if (turn.assistantText.isNotEmpty) ...[
             const SizedBox(height: 12),
             _TranscriptSpeakerBlock(
-              title: 'You said',
-              icon: LucideIcons.mic,
-              text: turn.userText,
-              color: cs.primary,
-              alignRight: true,
-            ),
-          ],
-          if (turn.assistantText.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            _TranscriptSpeakerBlock(
-              title: '$assistantName replied',
+              title: turn.isLive
+                  ? '$assistantName is replying'
+                  : '$assistantName replied',
               icon: LucideIcons.bot,
               text: turn.assistantText,
               color: cs.secondary,
@@ -1595,13 +1579,11 @@ class _MetaChip extends StatelessWidget {
 
 class _LiveTranscriptTurn {
   const _LiveTranscriptTurn({
-    required this.userText,
     required this.assistantText,
     required this.timestamp,
     this.isLive = false,
   });
 
-  final String userText;
   final String assistantText;
   final DateTime timestamp;
   final bool isLive;

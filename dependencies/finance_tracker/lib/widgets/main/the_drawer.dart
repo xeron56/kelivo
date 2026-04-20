@@ -18,183 +18,55 @@ class TheDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
+    final Color primary = Theme.of(context).colorScheme.primary;
     return Drawer(
+      backgroundColor: const Color(0xFFFDFDFE),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
+      ),
       child: SafeArea(
-        child: Column(
-          children: [
-            Consumer<MainViewmodel>(
-              builder: (context, viewmodel, child) => Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                decoration: BoxDecoration(
+                  color: primary.withAlpha(12),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        const Expanded(child: TheDivider()),
-                        Text(
-                          loc?.profile ?? 'Profile',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        const Expanded(child: TheDivider()),
-                      ],
-                    ),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(14),
-                        ),
-                        side: BorderSide(color: Theme.of(context).primaryColor),
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: primary,
+                        borderRadius: BorderRadius.circular(18),
                       ),
-                      child: ExpansionTile(
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(14)),
-                        ),
-                        collapsedShape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        trailing: CircleAvatar(
-                          minRadius: 12,
-                          maxRadius: 24,
-                          child: Text(
-                            viewmodel.selectedProfile.currency.symbol,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        title: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            viewmodel.selectedProfile.name,
-                            overflow: TextOverflow.fade,
-                            style: Theme.of(context).textTheme.titleLarge,
-                            maxLines: 2,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 2.0,
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                loc?.cashAccounts(
-                                      viewmodel.cashCountinProfile,
-                                    ) ??
-                                    'Cash Accounts: ${viewmodel.cashCountinProfile}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 2.0,
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                loc?.bankAccounts(
-                                      viewmodel.bankCountinProfile,
-                                    ) ??
-                                    'Bank Accounts: ${viewmodel.bankCountinProfile}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ListTile(
-                            title: Text(
-                              loc?.editThisProfile ?? 'Edit This Profile',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ProfileEntryScreen(
-                                    profile: viewmodel.selectedProfile,
-                                  ),
+                          Text(
+                            'Finance workspace',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF161C2D),
                                 ),
-                              ).then((_) async {
-                                await viewmodel.setLastUpdatedTimeStamp();
-                                await viewmodel.init();
-                              });
-                            },
-                            trailing: const Icon(Icons.edit, size: 16),
                           ),
-                          ListTile(
-                            title: Text(
-                              loc?.newProfile ?? 'New Profile',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ProfileEntryScreen(),
-                                ),
-                              ).then((_) async {
-                                await viewmodel.setLastUpdatedTimeStamp();
-                                await viewmodel.init();
-                              });
-                            },
-                            trailing: const Icon(Icons.add, size: 16),
-                          ),
-                          ListTile(
-                            title: Text(
-                              loc?.allProfiles ?? 'All Profiles',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            onTap: () {
-                              Navigator.pop(context);
-                              showDialog(
-                                context: context,
-                                builder: (context) => SimpleDialog(
-                                  title: Text(loc?.myProfiles ?? 'My Profiles'),
-                                  children: [
-                                    ...viewmodel.profiles.map(
-                                      (p) => ListTile(
-                                        leading: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: CircleAvatar(
-                                            child: Text(
-                                              p.currency.symbol,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        title: Text(
-                                          p.name,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium
-                                              ?.copyWith(fontSize: 18),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        onTap: () {
-                                          viewmodel.selectedProfile = p;
-                                          viewmodel.setIndex(0);
-                                          Navigator.pop(context);
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                  ],
-                                ),
-                              ).then((_) async {
-                                await viewmodel.setLastUpdatedTimeStamp();
-                                await viewmodel.init();
-                              });
-                            },
-                            trailing: const Icon(
-                              Icons.people_rounded,
-                              size: 16,
-                            ),
-                            shape: const Border(),
+                          const SizedBox(height: 4),
+                          Text(
+                            loc?.profile ?? 'Profile',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: const Color(0xFF667085)),
                           ),
                         ],
                       ),
@@ -202,118 +74,428 @@ class TheDrawer extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-            const Spacer(),
-            Builder(
-              builder: (context) {
-                final AdaptiveThemeManager<ThemeData> adaptiveTheme =
-                    AdaptiveTheme.of(context);
-                final AppViewmodel appViewmodel = Provider.of<AppViewmodel>(
-                  context,
-                );
-                if (appViewmodel.isSystemDefaultTheme) {
-                  return const SizedBox.shrink();
-                }
-                return Material(
-                  color: Colors.transparent,
-                  child: ListTile(
-                    title: Text(
-                      AppLocalizations.of(context)?.toggleTheme ??
-                          'Toggle Theme',
+              const SizedBox(height: 18),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    Consumer<MainViewmodel>(
+                      builder: (context, viewmodel, child) => Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: const Color(0xFFE9ECF5)),
+                        ),
+                        child: Theme(
+                          data: Theme.of(
+                            context,
+                          ).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+                            ),
+                            childrenPadding: const EdgeInsets.fromLTRB(
+                              12,
+                              0,
+                              12,
+                              12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            collapsedShape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            trailing: CircleAvatar(
+                              backgroundColor: primary,
+                              child: Text(
+                                viewmodel.selectedProfile.currency.symbol,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            title: Text(
+                              viewmodel.selectedProfile.name,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF161C2D),
+                                  ),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _InfoPill(
+                                    icon: Icons.payments_outlined,
+                                    text:
+                                        loc?.cashAccounts(
+                                          viewmodel.cashCountinProfile,
+                                        ) ??
+                                        'Cash ${viewmodel.cashCountinProfile}',
+                                  ),
+                                  _InfoPill(
+                                    icon: Icons.account_balance_outlined,
+                                    text:
+                                        loc?.bankAccounts(
+                                          viewmodel.bankCountinProfile,
+                                        ) ??
+                                        'Bank ${viewmodel.bankCountinProfile}',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            children: [
+                              _DrawerActionTile(
+                                label:
+                                    loc?.editThisProfile ?? 'Edit This Profile',
+                                icon: Icons.edit_outlined,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProfileEntryScreen(
+                                        profile: viewmodel.selectedProfile,
+                                      ),
+                                    ),
+                                  ).then((_) async {
+                                    await viewmodel.setLastUpdatedTimeStamp();
+                                    await viewmodel.init();
+                                  });
+                                },
+                              ),
+                              _DrawerActionTile(
+                                label: loc?.newProfile ?? 'New Profile',
+                                icon: Icons.add_circle_outline,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ProfileEntryScreen(),
+                                    ),
+                                  ).then((_) async {
+                                    await viewmodel.setLastUpdatedTimeStamp();
+                                    await viewmodel.init();
+                                  });
+                                },
+                              ),
+                              _DrawerActionTile(
+                                label: loc?.allProfiles ?? 'All Profiles',
+                                icon: Icons.people_outline_rounded,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => SimpleDialog(
+                                      title: Text(
+                                        loc?.myProfiles ?? 'My Profiles',
+                                      ),
+                                      children: [
+                                        ...viewmodel.profiles.map(
+                                          (p) => ListTile(
+                                            leading: CircleAvatar(
+                                              backgroundColor: primary,
+                                              child: Text(
+                                                p.currency.symbol,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                            title: Text(
+                                              p.name,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            onTap: () {
+                                              viewmodel.selectedProfile = p;
+                                              viewmodel.setIndex(0);
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20),
+                                      ],
+                                    ),
+                                  ).then((_) async {
+                                    await viewmodel.setLastUpdatedTimeStamp();
+                                    await viewmodel.init();
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                    onTap: () async {
-                      await AdaptiveTheme.getThemeMode() ==
-                              AdaptiveThemeMode.light
-                          ? adaptiveTheme.setDark()
-                          : await AdaptiveTheme.getThemeMode() ==
-                                AdaptiveThemeMode.dark
-                          ? adaptiveTheme.setLight()
-                          : adaptiveTheme.setDark();
-                    },
-                    trailing: ValueListenableBuilder(
-                      valueListenable: AdaptiveTheme.of(
-                        context,
-                      ).modeChangeNotifier,
-                      builder: (_, mode, child) {
-                        // update your UI
-
-                        return mode == AdaptiveThemeMode.light
-                            ? const Icon(Icons.light_mode)
-                            : mode == AdaptiveThemeMode.dark
-                            ? const Icon(Icons.dark_mode)
-                            : const Icon(Icons.light_mode);
+                    const SizedBox(height: 18),
+                    Text(
+                      'Preferences',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF98A2B3),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Builder(
+                      builder: (context) {
+                        final AdaptiveThemeManager<ThemeData> adaptiveTheme =
+                            AdaptiveTheme.of(context);
+                        final AppViewmodel appViewmodel =
+                            Provider.of<AppViewmodel>(context);
+                        if (appViewmodel.isSystemDefaultTheme) {
+                          return const SizedBox.shrink();
+                        }
+                        return _DrawerSection(
+                          child: ValueListenableBuilder(
+                            valueListenable: AdaptiveTheme.of(
+                              context,
+                            ).modeChangeNotifier,
+                            builder: (_, mode, child) => _DrawerActionTile(
+                              label:
+                                  AppLocalizations.of(context)?.toggleTheme ??
+                                  'Toggle Theme',
+                              icon: mode == AdaptiveThemeMode.dark
+                                  ? Icons.dark_mode_outlined
+                                  : Icons.light_mode_outlined,
+                              trailing: Text(
+                                mode == AdaptiveThemeMode.dark
+                                    ? 'Dark'
+                                    : 'Light',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: const Color(0xFF667085),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                              onTap: () async {
+                                await AdaptiveTheme.getThemeMode() ==
+                                        AdaptiveThemeMode.light
+                                    ? adaptiveTheme.setDark()
+                                    : await AdaptiveTheme.getThemeMode() ==
+                                          AdaptiveThemeMode.dark
+                                    ? adaptiveTheme.setLight()
+                                    : adaptiveTheme.setDark();
+                              },
+                            ),
+                          ),
+                        );
                       },
                     ),
-                  ),
-                );
-              },
-            ),
-            Material(
-              color: Colors.transparent,
-              child: ListTile(
-                title: Text(loc?.settings ?? 'Settings'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
+                    const SizedBox(height: 18),
+                    Text(
+                      'App',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF98A2B3),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
                     ),
-                  );
-                },
-                trailing: const Icon(Icons.settings),
-              ),
-            ),
-            Material(
-              color: Colors.transparent,
-              child: ListTile(
-                title: Text(loc?.aboutUs ?? 'About Us'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AboutUsScreen(),
+                    const SizedBox(height: 10),
+                    _DrawerSection(
+                      child: Column(
+                        children: [
+                          _DrawerActionTile(
+                            label: loc?.settings ?? 'Settings',
+                            icon: Icons.settings_outlined,
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 14),
+                            child: TheDivider(),
+                          ),
+                          _DrawerActionTile(
+                            label: loc?.aboutUs ?? 'About Us',
+                            icon: Icons.info_outline,
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AboutUsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                },
-                trailing: const Icon(Icons.info_outline),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: () async {
-                    final url = Uri.parse(gitHubURL);
-                    if (!await launchUrl(url)) {
-                      throw Exception('Could not launch $url');
-                    }
-                  },
-                  child: const Text("GitHub"),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
                 ),
-                VerticalDivider(
-                  thickness: 5,
-                  width: 5,
-                  color: Theme.of(context).primaryColor,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE9ECF5)),
                 ),
-                GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: () async {
-                    final url = Uri.parse(supportURL);
-                    if (!await launchUrl(url)) {
-                      throw Exception('Could not launch $url');
-                    }
-                  },
-                  child: Text(loc?.supportUs ?? 'Support Us'),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () async {
+                          final url = Uri.parse(gitHubURL);
+                          if (!await launchUrl(url)) {
+                            throw Exception('Could not launch $url');
+                          }
+                        },
+                        child: Text(
+                          'GitHub',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                color: const Color(0xFF475467),
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 20,
+                      color: const Color(0xFFE4E7EC),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () async {
+                          final url = Uri.parse(supportURL);
+                          if (!await launchUrl(url)) {
+                            throw Exception('Could not launch $url');
+                          }
+                        },
+                        child: Text(
+                          loc?.supportUs ?? 'Support Us',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                color: primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _DrawerSection extends StatelessWidget {
+  const _DrawerSection({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE9ECF5)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _DrawerActionTile extends StatelessWidget {
+  const _DrawerActionTile({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Icon(icon, color: const Color(0xFF667085)),
+        title: Text(
+          label,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: const Color(0xFF1D2939),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing:
+            trailing ??
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF98A2B3)),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFF667085)),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF475467),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
