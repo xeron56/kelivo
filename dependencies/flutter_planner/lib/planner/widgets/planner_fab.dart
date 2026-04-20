@@ -57,14 +57,16 @@ class PlannerFab extends StatelessWidget {
     final selectedDay = context.select(
       (PlannerBloc bloc) => bloc.state.selectedDay,
     );
+    final label = selectedTab == 0 ? 'New task' : 'New activity';
 
-    return FloatingActionButton(
+    return FloatingActionButton.extended(
       onPressed: () => _onPressed(
         context: context,
         selectedTab: selectedTab,
         selectedDay: selectedDay,
       ),
-      child: const Icon(Icons.add),
+      icon: const Icon(Icons.add_rounded),
+      label: Text(label),
     );
   }
 }

@@ -192,10 +192,9 @@ packages:
   dynamic_timeline:
     dependency: "direct main"
     description:
-      name: dynamic_timeline
-      sha256: "499fb38e653d65a2206d18fa2340814c2092e02898f3fcc7944bc115ab0bbca6"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../dynamic_timeline"
+      relative: true
+    source: path
     version: "0.1.2"
   equatable:
     dependency: "direct main"

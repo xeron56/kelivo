@@ -2,9 +2,9 @@ import 'package:activities_repository/activities_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_planner/activity/activity.dart';
-import 'package:flutter_planner/helpers/router_fallback.dart';
 import 'package:flutter_planner/app/app.dart';
 import 'package:flutter_planner/authentication/authentication.dart';
+import 'package:flutter_planner/helpers/router_fallback.dart';
 import 'package:flutter_planner/planner/planner.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reminders_repository/reminders_repository.dart';
@@ -60,30 +60,72 @@ class PlannerActivitiesHeader extends StatelessWidget {
     final selectedDay = context.select(
       (PlannerBloc bloc) => bloc.state.selectedDay,
     );
+    final theme = Theme.of(context);
+    final dateLabel = MaterialLocalizations.of(
+      context,
+    ).formatMediumDate(selectedDay);
 
-    return Row(
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 14,
+      runSpacing: 14,
       children: [
-        Expanded(
-          child: Text(
-            'Activities',
-            style: Theme.of(context).textTheme.headlineSmall,
-            overflow: TextOverflow.ellipsis,
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: currentSize == PlannerSize.large ? 420 : double.infinity,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Activities',
+                style: theme.textTheme.headlineSmall,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Plan the day with time-blocked work and routines.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
           ),
         ),
-        ElevatedButton(
-          onPressed: () =>
-              context.read<PlannerBloc>().add(const PlannerAddRoutines()),
-          child: const Text('Add routines'),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () =>
+                  context.read<PlannerBloc>().add(const PlannerAddRoutines()),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Load routines'),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton.icon(
+              onPressed: () => _onAdd(
+                currentSize: currentSize,
+                context: context,
+                selectedDay: selectedDay,
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('New activity'),
+            ),
+          ],
         ),
-        const SizedBox(width: 20),
-        ElevatedButton(
-          onPressed: () => _onAdd(
-            currentSize: currentSize,
-            context: context,
-            selectedDay: selectedDay,
+        if (currentSize == PlannerSize.large)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              dateLabel,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            ),
           ),
-          child: const Text('Add'),
-        ),
       ],
     );
   }

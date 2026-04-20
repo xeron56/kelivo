@@ -7,20 +7,34 @@ class PlannerTasksHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: Text(
-            'Tasks',
-            style: Theme.of(context).textTheme.titleLarge,
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tasks',
+                style: theme.textTheme.titleLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Capture, sort, and finish the next highest-value items.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
           ),
         ),
-        ElevatedButton(
-          onPressed: () => context.read<PlannerBloc>().add(
-                const PlannerNewTaskAdded(),
-              ),
-          child: const Text('+ new'),
+        const SizedBox(width: 16),
+        ElevatedButton.icon(
+          onPressed: () =>
+              context.read<PlannerBloc>().add(const PlannerNewTaskAdded()),
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: const Text('New task'),
         ),
       ],
     );
