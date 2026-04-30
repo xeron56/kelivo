@@ -42,10 +42,9 @@ class FinanceMcpRuntimeService {
       'balance questions, or funds balance questions, call '
       'get_current_balance before answering. Do not use spending tools for '
       'balance questions. For finance write actions, use '
-      'get_transaction_entry_options whenever account names are unclear, then '
-      'use create_finance_transaction to add the record. Explain spending '
-      'patterns clearly and confirm any created transaction with the resolved '
-      'fund account, category, amount, and date.';
+      'get_finance_action_options whenever names or categories are unclear, '
+      'then use the matching create_finance_* tool to complete the action. '
+      'Confirm what was created and mention any assumptions or fuzzy matches.';
 
   static const List<FinanceMcpToolSpec> toolSpecs = <FinanceMcpToolSpec>[
     FinanceMcpToolSpec(
@@ -149,6 +148,15 @@ class FinanceMcpRuntimeService {
       },
     ),
     FinanceMcpToolSpec(
+      name: 'get_finance_action_options',
+      description:
+          'Get available finance accounts, budgets, projects, categories, and account types for create actions.',
+      inputSchema: <String, dynamic>{
+        'type': 'object',
+        'properties': <String, dynamic>{},
+      },
+    ),
+    FinanceMcpToolSpec(
       name: 'create_finance_transaction',
       description:
           'Create an income or expense transaction in the finance database. Use this after the user explicitly states money spent or earned.',
@@ -193,6 +201,90 @@ class FinanceMcpRuntimeService {
           },
         },
         'required': <String>['transaction_type', 'amount'],
+      },
+    ),
+    FinanceMcpToolSpec(
+      name: 'create_finance_account',
+      description:
+          'Create a finance account such as a bank account, wallet, credit card, loan, receivable, or person.',
+      inputSchema: <String, dynamic>{
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'account_type': <String, dynamic>{'type': 'string'},
+          'name': <String, dynamic>{'type': 'string'},
+          'opening_balance': <String, dynamic>{'type': 'number'},
+          'open_date': <String, dynamic>{'type': 'string'},
+          'holder_name': <String, dynamic>{'type': 'string'},
+          'institution': <String, dynamic>{'type': 'string'},
+          'branch': <String, dynamic>{'type': 'string'},
+          'branch_code': <String, dynamic>{'type': 'string'},
+          'account_no': <String, dynamic>{'type': 'string'},
+          'card_network': <String, dynamic>{'type': 'string'},
+          'card_no': <String, dynamic>{'type': 'string'},
+          'statement_date': <String, dynamic>{'type': 'integer'},
+          'agreement_no': <String, dynamic>{'type': 'string'},
+          'interest_rate': <String, dynamic>{'type': 'number'},
+          'start_date': <String, dynamic>{'type': 'string'},
+          'end_date': <String, dynamic>{'type': 'string'},
+          'address': <String, dynamic>{'type': 'string'},
+          'email': <String, dynamic>{'type': 'string'},
+          'phone': <String, dynamic>{'type': 'string'},
+          'tin': <String, dynamic>{'type': 'string'},
+          'zip': <String, dynamic>{'type': 'string'},
+          'paid_amount': <String, dynamic>{'type': 'number'},
+          'paid_date': <String, dynamic>{'type': 'string'},
+        },
+        'required': <String>['account_type', 'name'],
+      },
+    ),
+    FinanceMcpToolSpec(
+      name: 'create_finance_project',
+      description: 'Create a finance project.',
+      inputSchema: <String, dynamic>{
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'name': <String, dynamic>{'type': 'string'},
+          'description': <String, dynamic>{'type': 'string'},
+          'start_date': <String, dynamic>{'type': 'string'},
+          'end_date': <String, dynamic>{'type': 'string'},
+          'status': <String, dynamic>{'type': 'string'},
+          'budget_name': <String, dynamic>{'type': 'string'},
+        },
+        'required': <String>['name'],
+      },
+    ),
+    FinanceMcpToolSpec(
+      name: 'create_finance_budget',
+      description: 'Create a finance budget with income and expense items.',
+      inputSchema: <String, dynamic>{
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'name': <String, dynamic>{'type': 'string'},
+          'details': <String, dynamic>{'type': 'string'},
+          'interval': <String, dynamic>{'type': 'string'},
+          'income_items': <String, dynamic>{'type': 'array'},
+          'expense_items': <String, dynamic>{'type': 'array'},
+          'fund_account_names': <String, dynamic>{'type': 'array'},
+        },
+        'required': <String>['name'],
+      },
+    ),
+    FinanceMcpToolSpec(
+      name: 'create_finance_payment_reminder',
+      description: 'Create a one-time or repeating payment reminder.',
+      inputSchema: <String, dynamic>{
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'amount': <String, dynamic>{'type': 'number'},
+          'details': <String, dynamic>{'type': 'string'},
+          'payable_account_name': <String, dynamic>{'type': 'string'},
+          'fund_account_name': <String, dynamic>{'type': 'string'},
+          'interval': <String, dynamic>{'type': 'string'},
+          'day': <String, dynamic>{'type': 'integer'},
+          'payment_date': <String, dynamic>{'type': 'string'},
+          'status': <String, dynamic>{'type': 'string'},
+        },
+        'required': <String>['amount', 'details'],
       },
     ),
   ];
@@ -503,6 +595,19 @@ class FinanceMcpRuntimeService {
     );
 
     server.registerTool(
+      name: 'get_finance_action_options',
+      description: _specByName['get_finance_action_options']!.description,
+      inputSchema: ToolInputSchema(
+        properties:
+            _specByName['get_finance_action_options']!.inputSchema['properties']
+                as Map<String, dynamic>,
+      ),
+      callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
+        return _handleGetFinanceActionOptions(args);
+      },
+    );
+
+    server.registerTool(
       name: 'create_finance_transaction',
       description: _specByName['create_finance_transaction']!.description,
       inputSchema: ToolInputSchema(
@@ -516,6 +621,77 @@ class FinanceMcpRuntimeService {
       ),
       callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
         return _handleCreateFinanceTransaction(args);
+      },
+    );
+
+    server.registerTool(
+      name: 'create_finance_account',
+      description: _specByName['create_finance_account']!.description,
+      inputSchema: ToolInputSchema(
+        properties:
+            _specByName['create_finance_account']!.inputSchema['properties']
+                as Map<String, dynamic>,
+        required:
+            (_specByName['create_finance_account']!.inputSchema['required']
+                    as List<dynamic>)
+                .cast<String>(),
+      ),
+      callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
+        return _handleCreateFinanceAccount(args);
+      },
+    );
+
+    server.registerTool(
+      name: 'create_finance_project',
+      description: _specByName['create_finance_project']!.description,
+      inputSchema: ToolInputSchema(
+        properties:
+            _specByName['create_finance_project']!.inputSchema['properties']
+                as Map<String, dynamic>,
+        required:
+            (_specByName['create_finance_project']!.inputSchema['required']
+                    as List<dynamic>)
+                .cast<String>(),
+      ),
+      callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
+        return _handleCreateFinanceProject(args);
+      },
+    );
+
+    server.registerTool(
+      name: 'create_finance_budget',
+      description: _specByName['create_finance_budget']!.description,
+      inputSchema: ToolInputSchema(
+        properties:
+            _specByName['create_finance_budget']!.inputSchema['properties']
+                as Map<String, dynamic>,
+        required:
+            (_specByName['create_finance_budget']!.inputSchema['required']
+                    as List<dynamic>)
+                .cast<String>(),
+      ),
+      callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
+        return _handleCreateFinanceBudget(args);
+      },
+    );
+
+    server.registerTool(
+      name: 'create_finance_payment_reminder',
+      description:
+          _specByName['create_finance_payment_reminder']!.description,
+      inputSchema: ToolInputSchema(
+        properties:
+            _specByName['create_finance_payment_reminder']!
+                    .inputSchema['properties']
+                as Map<String, dynamic>,
+        required:
+            (_specByName['create_finance_payment_reminder']!
+                        .inputSchema['required']
+                    as List<dynamic>)
+                .cast<String>(),
+      ),
+      callback: ({Map<String, dynamic>? args, RequestHandlerExtra? extra}) {
+        return _handleCreateFinancePaymentReminder(args);
       },
     );
   }
@@ -674,6 +850,14 @@ class FinanceMcpRuntimeService {
     return _resultFromAction(result);
   }
 
+  Future<CallToolResult> _handleGetFinanceActionOptions(
+    Map<String, dynamic>? args,
+  ) async {
+    final Map<String, dynamic> result = await _actionService
+        .getAutomationOptions();
+    return _resultFromAction(result);
+  }
+
   Future<CallToolResult> _handleCreateFinanceTransaction(
     Map<String, dynamic>? args,
   ) async {
@@ -687,6 +871,82 @@ class FinanceMcpRuntimeService {
       referenceNo: (args?['reference_no'] ?? '').toString(),
       projectName: (args?['project_name'] ?? '').toString(),
     );
+    return _resultFromAction(result);
+  }
+
+  Future<CallToolResult> _handleCreateFinanceAccount(
+    Map<String, dynamic>? args,
+  ) async {
+    final Map<String, dynamic> result = await _actionService.createAccount(
+      accountType: (args?['account_type'] ?? '').toString(),
+      name: (args?['name'] ?? '').toString(),
+      openingBalance: args?['opening_balance'],
+      openDate: (args?['open_date'] ?? '').toString(),
+      holderName: (args?['holder_name'] ?? '').toString(),
+      institution: (args?['institution'] ?? '').toString(),
+      branch: (args?['branch'] ?? '').toString(),
+      branchCode: (args?['branch_code'] ?? '').toString(),
+      accountNo: (args?['account_no'] ?? '').toString(),
+      cardNetwork: (args?['card_network'] ?? '').toString(),
+      cardNo: (args?['card_no'] ?? '').toString(),
+      statementDate: args?['statement_date'],
+      agreementNo: (args?['agreement_no'] ?? '').toString(),
+      interestRate: args?['interest_rate'],
+      startDate: (args?['start_date'] ?? '').toString(),
+      endDate: (args?['end_date'] ?? '').toString(),
+      address: (args?['address'] ?? '').toString(),
+      email: (args?['email'] ?? '').toString(),
+      phone: (args?['phone'] ?? '').toString(),
+      tin: (args?['tin'] ?? '').toString(),
+      zip: (args?['zip'] ?? '').toString(),
+      paidAmount: args?['paid_amount'],
+      paidDate: (args?['paid_date'] ?? '').toString(),
+    );
+    return _resultFromAction(result);
+  }
+
+  Future<CallToolResult> _handleCreateFinanceProject(
+    Map<String, dynamic>? args,
+  ) async {
+    final Map<String, dynamic> result = await _actionService.createProject(
+      name: (args?['name'] ?? '').toString(),
+      description: (args?['description'] ?? '').toString(),
+      startDate: (args?['start_date'] ?? '').toString(),
+      endDate: (args?['end_date'] ?? '').toString(),
+      status: (args?['status'] ?? '').toString(),
+      budgetName: (args?['budget_name'] ?? '').toString(),
+    );
+    return _resultFromAction(result);
+  }
+
+  Future<CallToolResult> _handleCreateFinanceBudget(
+    Map<String, dynamic>? args,
+  ) async {
+    final Map<String, dynamic> result = await _actionService.createBudget(
+      name: (args?['name'] ?? '').toString(),
+      details: (args?['details'] ?? '').toString(),
+      interval: (args?['interval'] ?? '').toString(),
+      incomeItems: (args?['income_items'] as List?)?.toList(),
+      expenseItems: (args?['expense_items'] as List?)?.toList(),
+      fundAccountNames: (args?['fund_account_names'] as List?)?.toList(),
+    );
+    return _resultFromAction(result);
+  }
+
+  Future<CallToolResult> _handleCreateFinancePaymentReminder(
+    Map<String, dynamic>? args,
+  ) async {
+    final Map<String, dynamic> result = await _actionService
+        .createPaymentReminder(
+          amount: args?['amount'],
+          details: (args?['details'] ?? '').toString(),
+          payableAccountName: (args?['payable_account_name'] ?? '').toString(),
+          fundAccountName: (args?['fund_account_name'] ?? '').toString(),
+          interval: (args?['interval'] ?? '').toString(),
+          day: args?['day'],
+          paymentDate: (args?['payment_date'] ?? '').toString(),
+          status: (args?['status'] ?? '').toString(),
+        );
     return _resultFromAction(result);
   }
 

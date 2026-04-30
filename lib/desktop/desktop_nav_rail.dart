@@ -17,6 +17,7 @@ class DesktopNavRail extends StatelessWidget {
     required this.onTapChat,
     required this.onTapTranslate,
     required this.onTapStorage,
+    required this.onTapFocus,
     required this.onTapLive,
     required this.onTapSettings,
     required this.onTapFinance,
@@ -24,10 +25,11 @@ class DesktopNavRail extends StatelessWidget {
   });
 
   final int
-  activeIndex; // 0=Chat,1=Translate,2=Storage,3=Live,4=Settings,5=Finance,6=Finance Assistant
+  activeIndex; // 0=Chat,1=Translate,2=Storage,3=Focus,4=Live,5=Settings,6=Finance,7=Finance Assistant
   final VoidCallback onTapChat;
   final VoidCallback onTapTranslate;
   final VoidCallback onTapStorage;
+  final VoidCallback onTapFocus;
   final VoidCallback onTapLive;
   final VoidCallback onTapSettings;
   final VoidCallback onTapFinance;
@@ -44,10 +46,11 @@ class DesktopNavRail extends StatelessWidget {
     final isChatActive = activeIndex == 0;
     final isTranslateActive = activeIndex == 1;
     final isStorageActive = activeIndex == 2;
-    final isLiveActive = activeIndex == 3;
-    final isSettingsActive = activeIndex == 4;
-    final isFinanceActive = activeIndex == 5;
-    final isFinanceAssistantActive = activeIndex == 6;
+    final isFocusActive = activeIndex == 3;
+    final isLiveActive = activeIndex == 4;
+    final isSettingsActive = activeIndex == 5;
+    final isFinanceActive = activeIndex == 6;
+    final isFinanceAssistantActive = activeIndex == 7;
 
     return Container(
       width: width,
@@ -82,6 +85,15 @@ class DesktopNavRail extends StatelessWidget {
             size: 40,
             iconSize: 18,
             iconColor: isStorageActive ? cs.primary : null,
+          ),
+          const SizedBox(height: 8),
+          _CircleAction(
+            tooltip: 'Focus',
+            icon: lucide.Lucide.checkCheck,
+            onTap: onTapFocus,
+            size: 40,
+            iconSize: 18,
+            iconColor: isFocusActive ? cs.primary : null,
           ),
           const SizedBox(height: 8),
           _CircleAction(

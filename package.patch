@@ -1,0 +1,1 @@
+echo "\nnamespace = \"com.tunjid.isar\"" >> ~/.pub-cache/hosted/pub.dev/isar_flutter_libs-3.0.0-dev.8/android/build.gradle

@@ -41,15 +41,16 @@ import '../../../core/providers/tag_provider.dart';
 import '../../assistant/pages/tags_manager_page.dart';
 import '../../assistant/widgets/tags_manager_dialog.dart';
 import '../../assistant/widgets/assistant_select_sheet.dart';
+import '../../focus/widgets/embedded_focus_surface.dart';
 import '../../planner/pages/daily_planner_page.dart';
 import '../../../desktop/hotkeys/sidebar_tab_bus.dart';
 import 'dart:async';
 
-import 'package:finance_tracker/finance_tracker.dart';
 import 'package:finance_tracker/viewmodels/app_viewmodel.dart' as finance_vm;
 import 'package:finance_tracker/screens/main_screen.dart' as finance_main;
 import 'package:finance_tracker/screens/profile_entry_screen.dart'
     as finance_profile;
+import '../../finance/widgets/embedded_finance_surface.dart';
 
 class SideDrawer extends StatefulWidget {
   const SideDrawer({
@@ -1366,6 +1367,14 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                 child: _buildPlannerLauncherCard(context, cs, textBase),
               ),
 
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: _buildFocusLauncherCard(context, cs, textBase),
+              ),
+
               // Finance Profile Card (Integrated)
               if (!_isDesktop || !widget.embedded)
                 Padding(
@@ -1477,9 +1486,28 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                                       Navigator.of(context).push(
                                         MaterialPageRoute(
                                           builder: (_) =>
-                                              const FinanceTrackerApp(
-                                                embeddedInHost: true,
-                                              ),
+                                              const EmbeddedFinanceSurface(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: actionGap),
+                              SizedBox(
+                                width: actionSlot,
+                                height: actionSlot,
+                                child: Center(
+                                  child: IosIconButton(
+                                    size: iconSize,
+                                    color: textBase,
+                                    icon: Lucide.checkCheck,
+                                    padding: iconPadding,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const EmbeddedFocusSurface(),
                                         ),
                                       );
                                     },
@@ -1848,6 +1876,8 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                 children: [
                   Text(
                     'Daily Planner',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -1857,6 +1887,8 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                   const SizedBox(height: 2),
                   Text(
                     dateLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
                       color: textBase.withOpacity(0.68),
@@ -1865,14 +1897,98 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                minimumSize: const Size(0, 34),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: const TextStyle(fontSize: 13),
+              ),
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const DailyPlannerPage()),
                 );
               },
-              icon: const Icon(Icons.open_in_new, size: 16),
+              icon: const Icon(Icons.open_in_new, size: 14),
+              label: const Text('Open'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFocusLauncherCard(
+    BuildContext context,
+    ColorScheme cs,
+    Color textBase,
+  ) {
+    return Card(
+      elevation: 0,
+      color: cs.primaryContainer.withOpacity(0.55),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
+        side: BorderSide(color: cs.outlineVariant.withOpacity(0.45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: cs.primary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Icon(Lucide.checkCheck, color: cs.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Focus Matrix',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: textBase,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Eisenhower task board.',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: textBase.withOpacity(0.68),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                minimumSize: const Size(0, 34),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: const TextStyle(fontSize: 13),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const EmbeddedFocusSurface(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.open_in_new, size: 14),
               label: const Text('Open'),
             ),
           ],

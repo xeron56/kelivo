@@ -8,8 +8,11 @@
 
 #include <audioplayers_windows/audioplayers_windows_plugin.h>
 #include <desktop_drop/desktop_drop_plugin.h>
+#include <desktop_window/desktop_window_plugin.h>
 #include <dynamic_color/dynamic_color_plugin_c_api.h>
 #include <file_selector_windows/file_selector_windows.h>
+#include <flutter_localization/flutter_localization_plugin_c_api.h>
+#include <flutter_timezone/flutter_timezone_plugin_c_api.h>
 #include <hotkey_manager_windows/hotkey_manager_windows_plugin_c_api.h>
 #include <irondash_engine_context/irondash_engine_context_plugin_c_api.h>
 #include <isar_flutter_libs/isar_flutter_libs_plugin.h>
@@ -29,10 +32,16 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
   DesktopDropPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DesktopDropPlugin"));
+  DesktopWindowPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("DesktopWindowPlugin"));
   DynamicColorPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DynamicColorPluginCApi"));
   FileSelectorWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FileSelectorWindows"));
+  FlutterLocalizationPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FlutterLocalizationPluginCApi"));
+  FlutterTimezonePluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FlutterTimezonePluginCApi"));
   HotkeyManagerWindowsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("HotkeyManagerWindowsPluginCApi"));
   IrondashEngineContextPluginCApiRegisterWithRegistrar(

@@ -157,6 +157,11 @@ class GeminiLiveSessionService extends ChangeNotifier {
         },
       );
 
+      // Await the WebSocket handshake before sending. In web_socket_channel v3
+      // this surfaces rejection errors (bad API key, network failure) as a
+      // thrown exception rather than a silent onDone close.
+      await _channel!.ready;
+
       _send(<String, dynamic>{
         'setup': <String, dynamic>{
           'model': _modelId,

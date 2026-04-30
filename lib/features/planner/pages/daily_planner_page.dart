@@ -20,7 +20,9 @@ class _DailyPlannerPageState extends State<DailyPlannerPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isWide = MediaQuery.of(context).size.width >= 900;
+    final width = MediaQuery.of(context).size.width;
+    final isWide = width >= 900;
+    final isMobile = width < 600;
     final dateLabel = DateFormat('EEEE, MMM d').format(DateTime.now());
 
     return Scaffold(
@@ -53,20 +55,27 @@ class _DailyPlannerPageState extends State<DailyPlannerPage> {
           ],
         ),
         actions: [
-          TextButton.icon(
-            onPressed: _closePlanner,
-            icon: const Icon(Icons.close_rounded),
-            label: const Text('Close'),
-          ),
+          if (!isMobile)
+            TextButton.icon(
+              onPressed: _closePlanner,
+              icon: const Icon(Icons.close_rounded),
+              label: const Text('Close'),
+            )
+          else
+            IconButton(
+              tooltip: 'Close',
+              onPressed: _closePlanner,
+              icon: const Icon(Icons.close_rounded),
+            ),
           const SizedBox(width: 8),
         ],
       ),
       body: Padding(
         padding: EdgeInsets.fromLTRB(
-          isWide ? 24 : 14,
-          10,
-          isWide ? 24 : 14,
-          isWide ? 24 : 14,
+          isWide ? 24 : (isMobile ? 10 : 14),
+          isMobile ? 4 : 10,
+          isWide ? 24 : (isMobile ? 10 : 14),
+          isWide ? 24 : (isMobile ? 10 : 14),
         ),
         child: Column(
           children: [
@@ -74,16 +83,17 @@ class _DailyPlannerPageState extends State<DailyPlannerPage> {
               dateLabel: dateLabel,
               showIntro: _showIntro,
               onDismiss: () => setState(() => _showIntro = false),
+              isMobile: isMobile,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: isMobile ? 6 : 16),
             Expanded(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(isMobile ? 18 : 30),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(color: const Color(0xFFE4E5EB)),
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(isMobile ? 18 : 30),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x0A000000),
@@ -92,7 +102,11 @@ class _DailyPlannerPageState extends State<DailyPlannerPage> {
                       ),
                     ],
                   ),
-                  child: const PlannerIntegrationView(),
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeTop: true,
+                    child: const PlannerIntegrationView(),
+                  ),
                 ),
               ),
             ),
@@ -108,16 +122,28 @@ class _PlannerHeroCard extends StatelessWidget {
     required this.dateLabel,
     required this.showIntro,
     required this.onDismiss,
+    this.isMobile = false,
   });
 
   final String dateLabel;
   final bool showIntro;
   final VoidCallback onDismiss;
+  final bool isMobile;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+
+    if (isMobile) {
+      if (!showIntro) return const SizedBox.shrink();
+      return _MobileHeroCard(
+        dateLabel: dateLabel,
+        cs: cs,
+        theme: theme,
+        onDismiss: onDismiss,
+      );
+    }
 
     return Container(
       width: double.infinity,
@@ -155,23 +181,26 @@ class _PlannerHeroCard extends StatelessWidget {
                   size: 28,
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Plan your day with less friction',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Plan your day with less friction',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Use one focused view for tasks, routines, and timed activities.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
+                    const SizedBox(height: 6),
+                    Text(
+                      'Use one focused view for tasks, routines, and timed activities.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -228,6 +257,96 @@ class _PlannerHeroCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact single-row banner for mobile screens (dismissible).
+class _MobileHeroCard extends StatelessWidget {
+  const _MobileHeroCard({
+    required this.dateLabel,
+    required this.cs,
+    required this.theme,
+    required this.onDismiss,
+  });
+
+  final String dateLabel;
+  final ColorScheme cs;
+  final ThemeData theme;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4E5EB)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F4FF),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(Icons.today_rounded, color: cs.primary, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Daily Planner',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  dateLabel,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Tasks + Activities',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: cs.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Hide',
+            onPressed: onDismiss,
+            icon: const Icon(Icons.close_rounded, size: 16),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
+          ),
         ],
       ),
     );

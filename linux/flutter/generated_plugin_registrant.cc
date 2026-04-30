@@ -8,8 +8,11 @@
 
 #include <audioplayers_linux/audioplayers_linux_plugin.h>
 #include <desktop_drop/desktop_drop_plugin.h>
+#include <desktop_window/desktop_window_plugin.h>
 #include <dynamic_color/dynamic_color_plugin.h>
 #include <file_selector_linux/file_selector_plugin.h>
+#include <flutter_localization/flutter_localization_plugin.h>
+#include <flutter_timezone/flutter_timezone_plugin.h>
 #include <hotkey_manager_linux/hotkey_manager_linux_plugin.h>
 #include <irondash_engine_context/irondash_engine_context_plugin.h>
 #include <isar_flutter_libs/isar_flutter_libs_plugin.h>
@@ -28,12 +31,21 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) desktop_drop_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "DesktopDropPlugin");
   desktop_drop_plugin_register_with_registrar(desktop_drop_registrar);
+  g_autoptr(FlPluginRegistrar) desktop_window_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "DesktopWindowPlugin");
+  desktop_window_plugin_register_with_registrar(desktop_window_registrar);
   g_autoptr(FlPluginRegistrar) dynamic_color_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "DynamicColorPlugin");
   dynamic_color_plugin_register_with_registrar(dynamic_color_registrar);
   g_autoptr(FlPluginRegistrar) file_selector_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FileSelectorPlugin");
   file_selector_plugin_register_with_registrar(file_selector_linux_registrar);
+  g_autoptr(FlPluginRegistrar) flutter_localization_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterLocalizationPlugin");
+  flutter_localization_plugin_register_with_registrar(flutter_localization_registrar);
+  g_autoptr(FlPluginRegistrar) flutter_timezone_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterTimezonePlugin");
+  flutter_timezone_plugin_register_with_registrar(flutter_timezone_registrar);
   g_autoptr(FlPluginRegistrar) hotkey_manager_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "HotkeyManagerLinuxPlugin");
   hotkey_manager_linux_plugin_register_with_registrar(hotkey_manager_linux_registrar);

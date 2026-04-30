@@ -72,6 +72,8 @@ dependencies:
   mobile_scanner: ^7.0.1
   mcp_client: # ^1.0.2
     path: ./dependencies/mcp_client
+  focus:
+    path: ./dependencies/Focus
   mcp_sdk: ^0.1.1
   flutter_highlight: ^0.7.0
   syncfusion_flutter_sliders: ^31.2.5

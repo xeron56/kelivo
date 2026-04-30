@@ -16,8 +16,9 @@ import '../core/providers/settings_provider.dart';
 import '../core/models/assistant.dart';
 
 import 'hotkeys/chat_action_bus.dart';
-import 'package:finance_tracker/finance_tracker.dart';
 import '../features/assistant/widgets/gemini_live_surface.dart';
+import '../features/finance/widgets/embedded_finance_surface.dart';
+import '../features/focus/widgets/embedded_focus_surface.dart';
 import '../features/home/utils/model_display_helper.dart';
 
 /// Desktop home screen: left compact rail + main content.
@@ -29,7 +30,8 @@ class DesktopHomePage extends StatefulWidget {
     this.initialProviderKey,
   });
 
-  final int? initialTabIndex; // 0=Chat,1=Translate,2=Storage,3=Settings
+  final int?
+  initialTabIndex; // 0=Chat,1=Translate,2=Storage,3=Focus,4=Live,5=Settings,6=Finance
   final String? initialProviderKey;
 
   @override
@@ -38,7 +40,7 @@ class DesktopHomePage extends StatefulWidget {
 
 class _DesktopHomePageState extends State<DesktopHomePage> {
   int _tabIndex =
-      0; // 0=Chat, 1=Translate, 2=Storage, 3=Live, 4=Settings, 5=Finance
+      0; // 0=Chat, 1=Translate, 2=Storage, 3=Focus, 4=Live, 5=Settings, 6=Finance
   bool _storageVisited = false;
 
   StreamSubscription<HotkeyAction>? _hotkeySub;
@@ -47,7 +49,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
   void initState() {
     super.initState();
     if (widget.initialTabIndex != null) {
-      _tabIndex = widget.initialTabIndex!.clamp(0, 5);
+      _tabIndex = widget.initialTabIndex!.clamp(0, 6);
     }
     _storageVisited = _tabIndex == 2;
     // 初始进入时如果就是聊天页，则聚焦聊天输入框
@@ -60,7 +62,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
     _hotkeySub = HotkeyEventBus.instance.stream.listen((action) async {
       switch (action) {
         case HotkeyAction.openSettings:
-          if (mounted) setState(() => _tabIndex = 4);
+          if (mounted) setState(() => _tabIndex = 5);
           break;
         case HotkeyAction.closeWindow:
           try {
@@ -129,7 +131,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
     final bool isFinanceAssistantSelected = assistantProvider
         .isFinanceAssistantId(assistantProvider.currentAssistantId);
     final int navActiveIndex = (_tabIndex == 0 && isFinanceAssistantSelected)
-        ? 6
+        ? 7
         : _tabIndex;
 
     return LayoutBuilder(
@@ -153,11 +155,12 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                 _tabIndex = 2;
                 _storageVisited = true;
               }),
-              onTapLive: () => setState(() => _tabIndex = 3),
+              onTapFocus: () => setState(() => _tabIndex = 3),
+              onTapLive: () => setState(() => _tabIndex = 4),
               onTapSettings: () {
-                setState(() => _tabIndex = 4);
+                setState(() => _tabIndex = 5);
               },
-              onTapFinance: () => setState(() => _tabIndex = 5),
+              onTapFinance: () => setState(() => _tabIndex = 6),
               onTapFinanceAssistant: () async {
                 final ap = context.read<AssistantProvider>();
                 await ap.ensureDefaults(context);
@@ -186,12 +189,13 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                           embedded: true,
                         )
                       : const SizedBox.shrink(),
+                  const EmbeddedFocusSurface(),
                   const _DesktopLiveAssistantTab(),
                   DesktopSettingsPage(
                     key: const ValueKey('settings_page'),
                     initialProviderKey: widget.initialProviderKey,
                   ),
-                  const FinanceTrackerApp(embeddedInHost: true),
+                  const EmbeddedFinanceSurface(),
                 ],
               ),
             ),
@@ -214,7 +218,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                         body,
                         // Inject the lazily-built settings page into the IndexedStack when needed
                         // to pass initialProviderKey without dropping chat state.
-                        if (_tabIndex == 3) const SizedBox.shrink(),
+                        if (_tabIndex == 5) const SizedBox.shrink(),
                       ],
                     ),
                   ),
@@ -348,7 +352,7 @@ class _DesktopLiveAssistantTab extends StatelessWidget {
     return GeminiLiveSurface(
       providerConfig: liveConfig,
       assistant: assistant,
-      modelId: 'gemini-3.1-flash-live-preview',
+      modelId: 'gemini-2.0-flash-live-exp',
       autoStart: false,
       showHeader: true,
     );

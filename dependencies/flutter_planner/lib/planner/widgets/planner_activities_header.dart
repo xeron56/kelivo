@@ -91,8 +91,9 @@ class PlannerActivitiesHeader extends StatelessWidget {
             ],
           ),
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             OutlinedButton.icon(
               onPressed: () =>
@@ -100,7 +101,6 @@ class PlannerActivitiesHeader extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Load routines'),
             ),
-            const SizedBox(width: 12),
             ElevatedButton.icon(
               onPressed: () => _onAdd(
                 currentSize: currentSize,

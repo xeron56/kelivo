@@ -49,24 +49,29 @@ class PlannerLayoutBuilder extends StatelessWidget {
 
   Widget _mobileScaffold(BuildContext context, PlannerSize currentSize) {
     final isCompact = currentSize == PlannerSize.small;
+    final hPad = isCompact ? 8.0 : 14.0;
+    final vGap = isCompact ? 10.0 : 12.0;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
+        // top is already consumed by the parent Scaffold's AppBar when embedded
+        top: false,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            isCompact ? 14 : 18,
-            16,
-            isCompact ? 14 : 18,
-            18,
-          ),
+          padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
           child: Column(
             children: [
               calendar(currentSize),
-              const SizedBox(height: 18),
+              SizedBox(height: vGap),
               Expanded(
                 child: _panel(
                   context: context,
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact ? 12 : 18,
+                    isCompact ? 12 : 18,
+                    isCompact ? 12 : 18,
+                    6,
+                  ),
                   child: tabs(currentSize),
                 ),
               ),

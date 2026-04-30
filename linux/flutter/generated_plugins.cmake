@@ -5,8 +5,11 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
   desktop_drop
+  desktop_window
   dynamic_color
   file_selector_linux
+  flutter_localization
+  flutter_timezone
   hotkey_manager_linux
   irondash_engine_context
   isar_flutter_libs

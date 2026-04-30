@@ -37,6 +37,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:finance_tracker/main.dart' as fn_main;
 import '../../features/home/services/finance_context_service.dart';
 import 'finance/finance_transaction_action_service.dart';
+import 'finance/finance_voice_command_service.dart';
 import 'mcp/finance/finance_mcp_runtime_service.dart';
 
 class FinanceIntegration {
@@ -163,7 +164,21 @@ class FinanceIntegration {
           transactionsRepository: context.read<TransactionsDriftRepository>(),
           balancesRepository: context.read<BalancesDriftRepository>(),
           projectsRepository: context.read<ProjectsDriftRepository>(),
+          budgetsRepository: context.read<BudgetsDriftRepository>(),
+          paymentRemindersRepository: context
+              .read<PaymentRemindersDriftRepository>(),
+          walletsRepository: context.read<WalletsDriftRepository>(),
+          banksRepository: context.read<BanksDriftRepository>(),
+          cCardsRepository: context.read<CCardsDriftRepository>(),
+          loansRepository: context.read<LoansDriftRepository>(),
+          peopleRepository: context.read<PeopleDriftRepository>(),
+          receivablesRepository: context.read<ReceivablesDriftRepository>(),
           appViewmodel: context.read<AppViewmodel>(),
+        ),
+      ),
+      Provider<FinanceVoiceCommandService>(
+        create: (context) => FinanceVoiceCommandService(
+          actionService: context.read<FinanceTransactionActionService>(),
         ),
       ),
       Provider<FinanceMcpRuntimeService>(
