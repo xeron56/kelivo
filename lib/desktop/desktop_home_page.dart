@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'desktop_nav_rail.dart';
 import 'desktop_chat_page.dart';
+import 'codex_home_landing_page.dart';
 import 'window_title_bar.dart';
 import 'desktop_settings_page.dart';
 import 'desktop_translate_page.dart';
@@ -14,6 +15,7 @@ import 'package:provider/provider.dart';
 import '../core/providers/assistant_provider.dart';
 import '../core/providers/settings_provider.dart';
 import '../core/models/assistant.dart';
+import '../core/services/api/gemini_live_session_service.dart';
 
 import 'hotkeys/chat_action_bus.dart';
 import '../features/assistant/widgets/gemini_live_surface.dart';
@@ -42,12 +44,14 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
   int _tabIndex =
       0; // 0=Chat, 1=Translate, 2=Storage, 3=Focus, 4=Live, 5=Settings, 6=Finance
   bool _storageVisited = false;
+  late bool _showLanding;
 
   StreamSubscription<HotkeyAction>? _hotkeySub;
 
   @override
   void initState() {
     super.initState();
+    _showLanding = widget.initialTabIndex == null;
     if (widget.initialTabIndex != null) {
       _tabIndex = widget.initialTabIndex!.clamp(0, 6);
     }
@@ -62,7 +66,12 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
     _hotkeySub = HotkeyEventBus.instance.stream.listen((action) async {
       switch (action) {
         case HotkeyAction.openSettings:
-          if (mounted) setState(() => _tabIndex = 5);
+          if (mounted) {
+            setState(() {
+              _showLanding = false;
+              _tabIndex = 5;
+            });
+          }
           break;
         case HotkeyAction.closeWindow:
           try {
@@ -98,24 +107,58 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
           } catch (_) {}
           break;
         case HotkeyAction.newTopic:
-          if (_tabIndex == 0) ChatActionBus.instance.fire(ChatAction.newTopic);
+          if (_tabIndex == 0) {
+            ChatActionBus.instance.fire(ChatAction.newTopic);
+          }
           break;
         case HotkeyAction.switchModel:
-          if (_tabIndex == 0)
+          if (_tabIndex == 0) {
             ChatActionBus.instance.fire(ChatAction.switchModel);
+          }
           break;
         case HotkeyAction.toggleLeftPanelAssistants:
-          if (_tabIndex == 0)
+          if (_tabIndex == 0) {
             ChatActionBus.instance.fire(ChatAction.toggleLeftPanelAssistants);
+          }
           break;
         case HotkeyAction.toggleLeftPanelTopics:
-          if (_tabIndex == 0)
+          if (_tabIndex == 0) {
             ChatActionBus.instance.fire(ChatAction.toggleLeftPanelTopics);
-          break;
-        default:
-          // Other actions handled in page-specific widgets
+          }
           break;
       }
+    });
+  }
+
+  Future<void> _submitFromLanding(
+    String prompt,
+    LandingAppTarget appTarget,
+  ) async {
+    if (appTarget.id == 'finance') {
+      final ap = context.read<AssistantProvider>();
+      await ap.ensureDefaults(context);
+      final financeAssistant = ap.financeAssistant;
+      if (financeAssistant != null) {
+        await ap.setCurrentAssistant(financeAssistant.id);
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _showLanding = false;
+      _tabIndex = 0;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ChatActionBus.instance.sendPrompt(prompt);
+    });
+  }
+
+  void _openPreviousFromLanding() {
+    setState(() {
+      _showLanding = false;
+      _tabIndex = 0;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ChatActionBus.instance.fire(ChatAction.focusInput);
     });
   }
 
@@ -132,7 +175,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
         .isFinanceAssistantId(assistantProvider.currentAssistantId);
     final int navActiveIndex = (_tabIndex == 0 && isFinanceAssistantSelected)
         ? 7
-        : _tabIndex;
+        : (_showLanding ? -1 : _tabIndex);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -141,66 +184,99 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
         final needsWidthPad = w < minWidth;
         final needsHeightPad = h < minHeight;
 
-        Widget body = Row(
-          children: [
-            DesktopNavRail(
-              activeIndex: navActiveIndex,
-              onTapChat: () {
-                setState(() => _tabIndex = 0);
-                // 切换到聊天页时聚焦输入框
-                ChatActionBus.instance.fire(ChatAction.focusInput);
-              },
-              onTapTranslate: () => setState(() => _tabIndex = 1),
-              onTapStorage: () => setState(() {
-                _tabIndex = 2;
-                _storageVisited = true;
-              }),
-              onTapFocus: () => setState(() => _tabIndex = 3),
-              onTapLive: () => setState(() => _tabIndex = 4),
-              onTapSettings: () {
-                setState(() => _tabIndex = 5);
-              },
-              onTapFinance: () => setState(() => _tabIndex = 6),
-              onTapFinanceAssistant: () async {
-                final ap = context.read<AssistantProvider>();
-                await ap.ensureDefaults(context);
-                final financeAssistant = ap.financeAssistant;
-                if (financeAssistant != null) {
-                  await ap.setCurrentAssistant(financeAssistant.id);
-                }
-                if (!mounted) return;
-                setState(() => _tabIndex = 0);
-                ChatActionBus.instance.fire(ChatAction.focusInput);
-              },
-            ),
-            Expanded(
-              // Keep all pages alive so ongoing chat streams are not canceled
-              // when switching tabs (Chat/Translate/Settings) on desktop.
-              child: IndexedStack(
-                index: _tabIndex,
+        Widget body = _showLanding
+            ? CodexHomeLandingPage(
+                onSubmit: _submitFromLanding,
+                onOpenPrevious: _openPreviousFromLanding,
+                onOpenFullApp: _openPreviousFromLanding,
+              )
+            : Row(
                 children: [
-                  // Chat page remains mounted
-                  const DesktopChatPage(),
-                  // Translate page remains mounted
-                  const DesktopTranslatePage(key: ValueKey('translate_page')),
-                  _storageVisited
-                      ? const StorageSpacePage(
-                          key: ValueKey('storage_space_page'),
-                          embedded: true,
-                        )
-                      : const SizedBox.shrink(),
-                  const EmbeddedFocusSurface(),
-                  const _DesktopLiveAssistantTab(),
-                  DesktopSettingsPage(
-                    key: const ValueKey('settings_page'),
-                    initialProviderKey: widget.initialProviderKey,
+                  DesktopNavRail(
+                    activeIndex: navActiveIndex,
+                    onTapHome: () {
+                      setState(() => _showLanding = true);
+                    },
+                    onTapChat: () {
+                      setState(() {
+                        _showLanding = false;
+                        _tabIndex = 0;
+                      });
+                      // 切换到聊天页时聚焦输入框
+                      ChatActionBus.instance.fire(ChatAction.focusInput);
+                    },
+                    onTapTranslate: () => setState(() {
+                      _showLanding = false;
+                      _tabIndex = 1;
+                    }),
+                    onTapStorage: () => setState(() {
+                      _showLanding = false;
+                      _tabIndex = 2;
+                      _storageVisited = true;
+                    }),
+                    onTapFocus: () => setState(() {
+                      _showLanding = false;
+                      _tabIndex = 3;
+                    }),
+                    onTapLive: () => setState(() {
+                      _showLanding = false;
+                      _tabIndex = 4;
+                    }),
+                    onTapSettings: () {
+                      setState(() {
+                        _showLanding = false;
+                        _tabIndex = 5;
+                      });
+                    },
+                    onTapFinance: () => setState(() {
+                      _showLanding = false;
+                      _tabIndex = 6;
+                    }),
+                    onTapFinanceAssistant: () async {
+                      final ap = context.read<AssistantProvider>();
+                      await ap.ensureDefaults(context);
+                      final financeAssistant = ap.financeAssistant;
+                      if (financeAssistant != null) {
+                        await ap.setCurrentAssistant(financeAssistant.id);
+                      }
+                      if (!mounted) return;
+                      setState(() {
+                        _showLanding = false;
+                        _tabIndex = 0;
+                      });
+                      ChatActionBus.instance.fire(ChatAction.focusInput);
+                    },
                   ),
-                  const EmbeddedFinanceSurface(),
+                  Expanded(
+                    // Keep all pages alive so ongoing chat streams are not canceled
+                    // when switching tabs (Chat/Translate/Settings) on desktop.
+                    child: IndexedStack(
+                      index: _tabIndex,
+                      children: [
+                        // Chat page remains mounted
+                        const DesktopChatPage(),
+                        // Translate page remains mounted
+                        const DesktopTranslatePage(
+                          key: ValueKey('translate_page'),
+                        ),
+                        _storageVisited
+                            ? const StorageSpacePage(
+                                key: ValueKey('storage_space_page'),
+                                embedded: true,
+                              )
+                            : const SizedBox.shrink(),
+                        const EmbeddedFocusSurface(),
+                        const _DesktopLiveAssistantTab(),
+                        DesktopSettingsPage(
+                          key: const ValueKey('settings_page'),
+                          initialProviderKey: widget.initialProviderKey,
+                        ),
+                        const EmbeddedFinanceSurface(),
+                      ],
+                    ),
+                  ),
                 ],
-              ),
-            ),
-          ],
-        );
+              );
 
         // Wrap with Windows custom title bar when on Windows platform.
         final content = isWindows
@@ -352,7 +428,7 @@ class _DesktopLiveAssistantTab extends StatelessWidget {
     return GeminiLiveSurface(
       providerConfig: liveConfig,
       assistant: assistant,
-      modelId: 'gemini-2.0-flash-live-exp',
+      modelId: GeminiLiveSessionService.defaultModelId,
       autoStart: false,
       showHeader: true,
     );
@@ -362,7 +438,7 @@ class _DesktopLiveAssistantTab extends StatelessWidget {
 // No extra router/shim; we import DesktopSettingsPage directly above.
 
 class _TitleBarLeading extends StatelessWidget {
-  const _TitleBarLeading({super.key});
+  const _TitleBarLeading();
 
   @override
   Widget build(BuildContext context) {
@@ -384,7 +460,7 @@ class _TitleBarLeading extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: cs.onSurface.withOpacity(0.8),
+            color: cs.onSurface.withValues(alpha: 0.8),
             // Avoid accidental underline when not under a Material ancestor in edge cases
             decoration: TextDecoration.none,
           ),

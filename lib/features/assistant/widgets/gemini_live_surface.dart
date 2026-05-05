@@ -19,7 +19,7 @@ class GeminiLiveSurface extends StatefulWidget {
     super.key,
     required this.providerConfig,
     required this.assistant,
-    this.modelId = 'gemini-2.0-flash-live-exp',
+    this.modelId = GeminiLiveSessionService.defaultModelId,
     this.autoStart = false,
     this.embedded = false,
     this.showHeader = true,

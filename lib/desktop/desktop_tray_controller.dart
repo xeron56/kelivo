@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../features/companion/pages/companion_page.dart';
 import '../l10n/app_localizations.dart';
+import '../main.dart' show appNavigatorKey;
 
 /// Desktop tray + window close behaviour controller.
 ///
@@ -109,6 +112,10 @@ class DesktopTrayController with TrayListener, WindowListener {
           label: l10n.desktopTrayMenuShowWindow,
           onClick: (_) async => _showWindow(),
         ),
+        MenuItem(
+          label: '☀️  My Day',
+          onClick: (_) async => _openCompanion(),
+        ),
         MenuItem.separator(),
         MenuItem(
           label: l10n.desktopTrayMenuExit,
@@ -117,6 +124,14 @@ class DesktopTrayController with TrayListener, WindowListener {
       ]);
       await trayManager.setContextMenu(menu);
     } catch (_) {}
+  }
+
+  Future<void> _openCompanion() async {
+    if (!_isDesktop) return;
+    await _showWindow();
+    appNavigatorKey.currentState?.push(
+      MaterialPageRoute<void>(builder: (_) => const CompanionPage()),
+    );
   }
 
   Future<void> _showWindow() async {
@@ -171,7 +186,7 @@ class DesktopTrayController with TrayListener, WindowListener {
     try {
       // Windows 需要在调用 TrackPopupMenu 前把窗口置为前台，
       // 否则点击其他地方时菜单可能不会自动关闭。
-      await trayManager.popUpContextMenu(bringAppToFront: true);
+      await trayManager.popUpContextMenu();
     } catch (_) {}
     // 无论是点击菜单项还是点击其他地方关闭菜单，
     // popUpContextMenu 都会在菜单关闭后返回，这里统一重置标记。

@@ -265,15 +265,17 @@ class FinanceTransactionActionService {
       allowSingleFallback: true,
     );
     if (!fundMatch.ok || fundMatch.value == null) {
+      final List<String> availableNames = fundingLedgers
+          .map((Ledger ledger) => ledger.account.name)
+          .toList(growable: false);
+      final String hint = availableNames.isEmpty
+          ? ''
+          : ' Available accounts: ${availableNames.join(', ')}.';
       return _error(
         code: 'fund_account_not_found',
-        message:
-            fundMatch.message ??
-            'Unable to resolve a funding account for this transaction.',
+        message: '${fundMatch.message ?? 'Unable to resolve a funding account.'}$hint',
         extra: <String, dynamic>{
-          'available_fund_accounts': fundingLedgers
-              .map((Ledger ledger) => ledger.account.name)
-              .toList(growable: false),
+          'available_fund_accounts': availableNames,
         },
       );
     }
@@ -282,18 +284,20 @@ class FinanceTransactionActionService {
       query: categoryName,
       fallbackQuery: narration,
       ledgers: categoryLedgers,
-      allowSingleFallback: false,
+      allowSingleFallback: true,
     );
     if (!categoryMatch.ok || categoryMatch.value == null) {
+      final List<String> availableNames = categoryLedgers
+          .map((Ledger ledger) => ledger.account.name)
+          .toList(growable: false);
+      final String hint = availableNames.isEmpty
+          ? ''
+          : ' Available ${mode.name} categories: ${availableNames.join(', ')}.';
       return _error(
         code: 'category_not_found',
-        message:
-            categoryMatch.message ??
-            'Unable to resolve a category account for this transaction.',
+        message: '${categoryMatch.message ?? 'Unable to resolve a category.'}$hint',
         extra: <String, dynamic>{
-          'available_categories': categoryLedgers
-              .map((Ledger ledger) => ledger.account.name)
-              .toList(growable: false),
+          'available_categories': availableNames,
           'expected_category_type': mode.name,
         },
       );
@@ -1133,11 +1137,40 @@ class FinanceTransactionActionService {
       );
     }
 
-    if (primary.isEmpty && allowSingleFallback && ledgers.length == 1) {
+    // Type-keyword fallback: query is a generic type label (e.g. "bank", "wallet").
+    if (primary.isNotEmpty) {
+      final List<Ledger> typeMatches = ledgers.where((Ledger l) {
+        final String typeName = _normalize(l.accountType.name);
+        return typeName == primary ||
+            typeName.contains(primary) ||
+            primary.contains(typeName);
+      }).toList(growable: false);
+      if (typeMatches.length == 1) {
+        return _MatchOutcome<Ledger>.success(
+          value: typeMatches.first,
+          warnings: <String>[
+            'Matched ${typeMatches.first.account.name} by account type "$primary".',
+          ],
+        );
+      }
+      if (typeMatches.length > 1) {
+        return _MatchOutcome<Ledger>.success(
+          value: typeMatches.first,
+          warnings: <String>[
+            'Multiple ${typeMatches.first.accountType.name} accounts found; used "${typeMatches.first.account.name}" as default.',
+          ],
+        );
+      }
+    }
+
+    if (primary.isEmpty && allowSingleFallback && ledgers.isNotEmpty) {
+      final String autoName = ledgers.first.account.name;
       return _MatchOutcome<Ledger>.success(
         value: ledgers.first,
         warnings: <String>[
-          'Only one matching account was available, so it was used automatically.',
+          ledgers.length == 1
+              ? 'Only one account was available, so it was used automatically.'
+              : 'No account specified; used "$autoName" as the default funding account.',
         ],
       );
     }

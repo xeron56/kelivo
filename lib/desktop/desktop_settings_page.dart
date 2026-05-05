@@ -46,6 +46,7 @@ import 'setting/default_model_pane.dart';
 import 'setting/search_services_pane.dart';
 import 'setting/mcp_pane.dart';
 import 'setting/tts_services_pane.dart';
+import 'setting/stt_services_pane.dart';
 import 'setting/quick_phrases_pane.dart';
 import 'setting/instruction_injection_pane.dart';
 import 'setting/backup_pane.dart';
@@ -84,6 +85,7 @@ enum _SettingsMenuItem {
   quickPhrases,
   instructionInjection,
   tts,
+  stt,
   networkProxy,
   backup,
   hotkeys,
@@ -128,6 +130,8 @@ class _DesktopSettingsPageState extends State<DesktopSettingsPage> {
           return l10n.settingsPageInstructionInjection;
         case _SettingsMenuItem.tts:
           return l10n.settingsPageTts;
+        case _SettingsMenuItem.stt:
+          return 'Speech-to-Text';
         case _SettingsMenuItem.networkProxy:
           return l10n.settingsPageNetworkProxy;
         case _SettingsMenuItem.backup:
@@ -232,10 +236,12 @@ class _DesktopSettingsPageState extends State<DesktopSettingsPage> {
                           return const DesktopTtsServicesPane(
                             key: ValueKey('tts'),
                           );
+                        case _SettingsMenuItem.stt:
+                          return const DesktopSttServicesPane(
+                            key: ValueKey('stt'),
+                          );
                         case _SettingsMenuItem.about:
                           return const DesktopAboutPane(key: ValueKey('about'));
-                        default:
-                          return _ComingSoonBody(selected: _selected);
                       }
                     }(),
                   ),
@@ -296,6 +302,7 @@ class _SettingsMenu extends StatelessWidget {
         l10n.settingsPageInstructionInjection,
       ),
       (_SettingsMenuItem.tts, lucide.Lucide.Volume2, l10n.settingsPageTts),
+      (_SettingsMenuItem.stt, Icons.mic_none_rounded, 'Speech-to-Text'),
       (
         _SettingsMenuItem.networkProxy,
         lucide.Lucide.EthernetPort,
@@ -411,37 +418,6 @@ class _MenuItemState extends State<_MenuItem> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ComingSoonBody extends StatelessWidget {
-  const _ComingSoonBody({required this.selected});
-  final _SettingsMenuItem selected;
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.outlineVariant.withOpacity(0.25),
-          ),
-        ),
-        child: Text(
-          'Coming soon',
-          style: TextStyle(
-            fontSize: 16,
-            color: cs.onSurface.withOpacity(0.7),
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),

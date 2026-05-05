@@ -15,6 +15,8 @@ typedef GeminiLiveToolHandler =
     Future<String> Function(String name, Map<String, dynamic> arguments);
 
 class GeminiLiveSessionService extends ChangeNotifier {
+  static const String defaultModelId = 'gemini-3.1-flash-live-preview';
+
   GeminiLiveSessionService({
     required ProviderConfig providerConfig,
     required String modelId,
@@ -23,7 +25,7 @@ class GeminiLiveSessionService extends ChangeNotifier {
     required GeminiLiveToolHandler? toolHandler,
     this.voiceName = 'Zephyr',
   }) : _providerConfig = providerConfig,
-       _modelId = modelId.startsWith('models/') ? modelId : 'models/$modelId',
+       _modelId = _normalizeModelName(modelId),
        _systemInstruction = systemInstruction.trim(),
        _functionDeclarations = List<Map<String, dynamic>>.unmodifiable(
          functionDeclarations,
@@ -104,6 +106,18 @@ class GeminiLiveSessionService extends ChangeNotifier {
   String get lastTextResponse => _lastTextResponse;
   String? get lastError => _lastError;
 
+  static String _normalizeModelName(String modelId) {
+    String normalized = modelId.trim();
+    if (normalized.startsWith('models/')) {
+      normalized = normalized.substring('models/'.length);
+    }
+    if (normalized.isEmpty ||
+        normalized == 'gemini-2.5-flash-preview-native-audio') {
+      normalized = defaultModelId;
+    }
+    return 'models/$normalized';
+  }
+
   Future<void> connect() async {
     if (_isDisposed || _connecting || _connected) {
       return;
@@ -146,13 +160,24 @@ class GeminiLiveSessionService extends ChangeNotifier {
           _notifyListenersIfActive();
         },
         onDone: () {
+          final int? closeCode = _channel?.closeCode;
+          final String? closeReason = _channel?.closeReason;
           _connected = false;
           _connecting = false;
           _awaitingModelTurn = false;
           _status = 'Disconnected';
-          _completePendingSetup(
-            StateError('Gemini Live websocket closed before setup completed.'),
+          final StringBuffer msg = StringBuffer(
+            'Gemini Live websocket closed before setup completed',
           );
+          if (closeCode != null) {
+            msg.write(' (code $closeCode');
+            if (closeReason != null && closeReason.isNotEmpty) {
+              msg.write(': $closeReason');
+            }
+            msg.write(')');
+          }
+          msg.write('.');
+          _completePendingSetup(StateError(msg.toString()));
           _notifyListenersIfActive();
         },
       );

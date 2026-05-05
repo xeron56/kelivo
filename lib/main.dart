@@ -45,10 +45,15 @@ import 'core/services/android_background.dart';
 import 'core/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/finance_integration.dart';
+import 'core/services/daily_companion_service.dart';
 import 'package:provider/single_child_widget.dart';
 
 final RouteObserver<ModalRoute<dynamic>> routeObserver =
     RouteObserver<ModalRoute<dynamic>>();
+
+/// Global navigator key — used by background services (e.g. companion tray)
+/// to push routes without a BuildContext.
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 bool _didCheckUpdates = false; // one-time update check flag
 bool _didEnsureAssistants = false; // ensure defaults after l10n ready
 bool _didEnsureSystemFonts = false; // one-time system fonts load when needed
@@ -149,6 +154,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MemoryProvider()),
         // Desktop hotkeys provider
         ChangeNotifierProvider(create: (_) => HotkeyProvider()),
+        ChangeNotifierProvider<DailyCompanionService>(
+          create: (_) => DailyCompanionService.instance,
+        ),
         ChangeNotifierProvider(
           create: (ctx) => BackupProvider(
             chatService: ctx.read<ChatService>(),
@@ -352,6 +360,7 @@ class MyApp extends StatelessWidget {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 title: 'Kelivo',
+                navigatorKey: appNavigatorKey,
                 // App UI language; null = follow system (respects iOS per-app language)
                 locale: settings.appLocaleForMaterialApp,
                 supportedLocales: AppLocalizations.supportedLocales,
@@ -422,6 +431,12 @@ class MyApp extends StatelessWidget {
                           minimizeToTrayOnClose:
                               sp.desktopMinimizeToTrayOnClose,
                         );
+                      } catch (_) {}
+                      // Start daily companion (greeting + reminders)
+                      try {
+                        if (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS) {
+                          await DailyCompanionService.instance.init();
+                        }
                       } catch (_) {}
                     });
                   }

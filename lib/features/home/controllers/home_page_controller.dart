@@ -109,6 +109,7 @@ class HomePageController extends ChangeNotifier {
 
   McpProvider? _mcpProvider;
   StreamSubscription<ChatAction>? _chatActionSub;
+  StreamSubscription<String>? _chatPromptSub;
 
   // ============================================================================
   // Animation Controllers
@@ -462,6 +463,17 @@ class HomePageController extends ChangeNotifier {
           break;
       }
     });
+    _chatPromptSub = ChatActionBus.instance.promptStream.listen((prompt) async {
+      if (prompt.trim().isEmpty) return;
+      if (isDesktopPlatform) {
+        _inputFocus.requestFocus();
+      }
+      await sendMessage(ChatInputData(text: prompt));
+      _inputController.clear();
+      if (isDesktopPlatform) {
+        _scrollToBottomSoon(animate: true);
+      }
+    });
   }
 
   Future<void> initChat() async {
@@ -515,9 +527,14 @@ class HomePageController extends ChangeNotifier {
 
   Future<void> sendMessage(ChatInputData input) async {
     final content = input.text.trim();
-    if (content.isEmpty && input.imagePaths.isEmpty && input.documents.isEmpty)
+    if (content.isEmpty &&
+        input.imagePaths.isEmpty &&
+        input.documents.isEmpty) {
       return;
-    if (currentConversation == null) await _createNewConversation();
+    }
+    if (currentConversation == null) {
+      await _createNewConversation();
+    }
 
     final success = await _viewModel.sendMessage(input);
     if (success) {
@@ -1301,6 +1318,9 @@ class HomePageController extends ChangeNotifier {
     _scrollCtrl.dispose();
     try {
       _chatActionSub?.cancel();
+    } catch (_) {}
+    try {
+      _chatPromptSub?.cancel();
     } catch (_) {}
     _chatController.dispose();
     _streamController.dispose();

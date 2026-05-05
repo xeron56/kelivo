@@ -11,6 +11,7 @@ import '../../mcp/pages/mcp_page.dart';
 import '../../assistant/pages/assistant_settings_page.dart';
 import 'about_page.dart';
 import 'tts_services_page.dart';
+import 'speech_to_text_settings_page.dart';
 import 'sponsor_page.dart';
 import '../../search/pages/search_services_page.dart';
 import '../../backup/pages/backup_page.dart';
@@ -214,6 +215,17 @@ class SettingsPage extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const TtsServicesPage()),
+                );
+              },
+            ),
+            _iosDivider(context),
+            _iosNavRow(
+              context,
+              icon: Icons.mic_none_rounded,
+              label: 'Speech-to-Text',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SpeechToTextSettingsPage()),
                 );
               },
             ),

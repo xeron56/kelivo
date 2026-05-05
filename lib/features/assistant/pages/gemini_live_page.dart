@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/assistant.dart';
 import '../../../core/providers/settings_provider.dart';
+import '../../../core/services/api/gemini_live_session_service.dart';
 import '../widgets/gemini_live_surface.dart';
 
 class GeminiLivePage extends StatelessWidget {
@@ -9,7 +10,7 @@ class GeminiLivePage extends StatelessWidget {
     super.key,
     required this.providerConfig,
     required this.assistant,
-    this.modelId = 'gemini-2.0-flash-live-exp',
+    this.modelId = GeminiLiveSessionService.defaultModelId,
   });
 
   final ProviderConfig providerConfig;

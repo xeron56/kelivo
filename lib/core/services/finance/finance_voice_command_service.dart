@@ -217,7 +217,8 @@ Allowed actions:
 Rules:
 - Use only the action names above.
 - If the request is ambiguous or missing critical fields, return action "clarify" and a short message.
-- Prefer exact names from the finance options below.
+- CRITICAL: fund_account_name MUST be the exact "name" value from a fund_accounts entry. Never invent a name; never use a type label like "bank" or "wallet". If not mentioned, use the first fund_account name.
+- CRITICAL: category_name MUST be the exact "name" value from expense_categories (for expenses) or income_categories (for income). Never invent a category name like "Rent" or "Groceries" — only use what is in the list. If the closest match is unclear, use the first item in the relevant category list.
 - For "salary received", "earned", or "receipt", use create_transaction with transaction_type "income".
 - For "spent", "paid", or "payment", use create_transaction with transaction_type "expense".
 - For one-time reminders, set payment_date and leave interval/day null.

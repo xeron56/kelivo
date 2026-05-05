@@ -14,6 +14,7 @@ class DesktopNavRail extends StatelessWidget {
   const DesktopNavRail({
     super.key,
     required this.activeIndex,
+    required this.onTapHome,
     required this.onTapChat,
     required this.onTapTranslate,
     required this.onTapStorage,
@@ -25,7 +26,8 @@ class DesktopNavRail extends StatelessWidget {
   });
 
   final int
-  activeIndex; // 0=Chat,1=Translate,2=Storage,3=Focus,4=Live,5=Settings,6=Finance,7=Finance Assistant
+  activeIndex; // -1=Home,0=Chat,1=Translate,2=Storage,3=Focus,4=Live,5=Settings,6=Finance,7=Finance Assistant
+  final VoidCallback onTapHome;
   final VoidCallback onTapChat;
   final VoidCallback onTapTranslate;
   final VoidCallback onTapStorage;
@@ -43,6 +45,7 @@ class DesktopNavRail extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isMac = Platform.isMacOS;
     final double topGap = isMac ? 36.0 : 8.0;
+    final isHomeActive = activeIndex == -1;
     final isChatActive = activeIndex == 0;
     final isTranslateActive = activeIndex == 1;
     final isStorageActive = activeIndex == 2;
@@ -60,6 +63,15 @@ class DesktopNavRail extends StatelessWidget {
           SizedBox(height: topGap),
           _UserAvatarButton(),
           const SizedBox(height: 12),
+          _CircleAction(
+            tooltip: 'Home',
+            icon: lucide.Lucide.Home,
+            onTap: onTapHome,
+            size: 40,
+            iconSize: 18,
+            iconColor: isHomeActive ? cs.primary : null,
+          ),
+          const SizedBox(height: 8),
           _CircleAction(
             tooltip: l10n.desktopNavChatTooltip,
             icon: lucide.Lucide.MessageCircle,

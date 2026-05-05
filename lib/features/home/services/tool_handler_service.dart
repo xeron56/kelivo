@@ -91,6 +91,10 @@ class ToolHandlerService {
     if (items is List && items.isNotEmpty) m['items'] = items.first;
     if (m['items'] is Map) m['items'] = _sanitizeNode(m['items'], kind);
 
+    if (m['type'] == 'array' && m['items'] == null) {
+      m['items'] = <String, dynamic>{'type': 'string'};
+    }
+
     // Recursively sanitize properties
     if (m['properties'] is Map) {
       final props = Map<String, dynamic>.from(m['properties']);
