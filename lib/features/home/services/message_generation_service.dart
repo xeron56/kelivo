@@ -133,6 +133,7 @@ class MessageGenerationService {
     // Apply context limit and inline images
     messageBuilderService.applyContextLimit(apiMessages, assistant);
     await messageBuilderService.inlineLocalImages(apiMessages);
+    final latestUserText = _latestUserText(apiMessages);
 
     // Prepare tools
     final toolDefs = generationController.buildToolDefinitions(
@@ -141,6 +142,7 @@ class MessageGenerationService {
       providerKey,
       modelId,
       hasBuiltInSearch,
+      latestUserText: latestUserText,
     );
     final onToolCall = toolDefs.isNotEmpty
         ? generationController.buildToolCallHandler(settings, assistant)
@@ -153,6 +155,15 @@ class MessageGenerationService {
       hasBuiltInSearch: hasBuiltInSearch,
       lastUserImagePaths: lastUserImagePaths,
     );
+  }
+
+  String? _latestUserText(List<Map<String, dynamic>> apiMessages) {
+    for (int i = apiMessages.length - 1; i >= 0; i--) {
+      if ((apiMessages[i]['role'] ?? '').toString() == 'user') {
+        return (apiMessages[i]['content'] ?? '').toString();
+      }
+    }
+    return null;
   }
 
   /// Create user message from input data.

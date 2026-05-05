@@ -743,7 +743,14 @@ class _SettingsPill extends StatelessWidget {
 }
 
 class DesktopHomeScreen extends ConsumerStatefulWidget {
-  const DesktopHomeScreen({super.key});
+  const DesktopHomeScreen({
+    super.key,
+    this.embeddedInHost = false,
+    this.onExitHost,
+  });
+
+  final bool embeddedInHost;
+  final VoidCallback? onExitHost;
 
   @override
   ConsumerState<DesktopHomeScreen> createState() => _DesktopHomeScreenState();
@@ -1264,8 +1271,19 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
             final isWide = constraints.maxWidth >= 900;
 
             final left = <Widget>[
-              WindowControls(colorScheme: cs),
-              const SizedBox(width: 12),
+              if (widget.embeddedInHost) ...[
+                _PillButton(
+                  label: 'Kelivo',
+                  icon: Icons.arrow_back_rounded,
+                  onTap:
+                      widget.onExitHost ??
+                      () => Navigator.of(context).maybePop(),
+                ),
+                const SizedBox(width: 10),
+              ] else ...[
+                WindowControls(colorScheme: cs),
+                const SizedBox(width: 12),
+              ],
               Container(
                 width: 22,
                 height: 22,

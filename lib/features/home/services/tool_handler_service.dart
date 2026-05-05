@@ -155,6 +155,7 @@ class ToolHandlerService {
     String providerKey,
     String modelId,
     bool hasBuiltInSearch, {
+    String? latestUserText,
     required bool Function(String providerKey, String modelId) isToolModel,
   }) {
     final List<Map<String, dynamic>> toolDefs = <Map<String, dynamic>>[];
@@ -176,6 +177,7 @@ class ToolHandlerService {
       assistant: assistant,
       providerKey: providerKey,
       supportsTools: supportsTools,
+      latestUserText: latestUserText,
     );
     toolDefs.addAll(mcpTools);
 
@@ -249,6 +251,7 @@ class ToolHandlerService {
     required Assistant? assistant,
     required String providerKey,
     required bool supportsTools,
+    String? latestUserText,
   }) {
     if (!supportsTools || !settings.mcpEnabled) return [];
 
@@ -270,6 +273,7 @@ class ToolHandlerService {
         settings: settings,
         assistant: assistant,
         providerKind: providerKind,
+        latestUserText: latestUserText,
       ),
     );
     return defs;
@@ -325,6 +329,7 @@ class ToolHandlerService {
     required SettingsProvider settings,
     required Assistant? assistant,
     required ProviderKind providerKind,
+    String? latestUserText,
   }) {
     if (!_isFinanceMcpAllowed(settings, assistant)) {
       return const <Map<String, dynamic>>[];
@@ -334,7 +339,9 @@ class ToolHandlerService {
       return const <Map<String, dynamic>>[];
     }
 
-    return FinanceMcpRuntimeService.toolSpecs
+    final specs = _selectFinanceToolSpecsForPrompt(latestUserText);
+
+    return specs
         .map((FinanceMcpToolSpec spec) {
           final sanitized = sanitizeToolParametersForProvider(
             spec.inputSchema,
@@ -350,6 +357,110 @@ class ToolHandlerService {
           };
         })
         .toList(growable: false);
+  }
+
+  List<FinanceMcpToolSpec> _selectFinanceToolSpecsForPrompt(String? text) {
+    final normalized = _normalizeIntentText(text);
+    if (normalized.isEmpty) return FinanceMcpRuntimeService.toolSpecs;
+
+    final names = <String>{};
+    if (_isBalanceOnlyPrompt(normalized)) {
+      names.add('get_current_balance');
+    } else if (_isTodaySpendingPrompt(normalized)) {
+      names.add('get_today_spending');
+    } else if (_isRecentTransactionsPrompt(normalized)) {
+      names.add('get_recent_transactions');
+    }
+
+    if (names.isEmpty) return FinanceMcpRuntimeService.toolSpecs;
+
+    return FinanceMcpRuntimeService.toolSpecs
+        .where((spec) => names.contains(spec.name))
+        .toList(growable: false);
+  }
+
+  String _normalizeIntentText(String? text) {
+    if (text == null) return '';
+    return text
+        .toLowerCase()
+        .replaceAll(RegExp(r'\[image:[^\]]+\]'), ' ')
+        .replaceAll(RegExp(r'\[file:[^\]]+\]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  bool _isBalanceOnlyPrompt(String text) {
+    final asksBalance =
+        text.contains('balance') ||
+        text.contains('available funds') ||
+        text.contains('available fund') ||
+        text.contains('funds available') ||
+        text.contains('current amount') ||
+        text.contains('how much money') ||
+        text.contains('money do i have');
+    if (!asksBalance) return false;
+    return !_mentionsNonBalanceFinanceWork(text);
+  }
+
+  bool _isTodaySpendingPrompt(String text) {
+    final asksToday = text.contains('today');
+    final asksSpending =
+        text.contains('spend') ||
+        text.contains('spent') ||
+        text.contains('expense') ||
+        text.contains('expenses') ||
+        text.contains('cost');
+    return asksToday &&
+        asksSpending &&
+        !_mentionsWriteIntent(text) &&
+        !_mentionsComplexReadIntent(text);
+  }
+
+  bool _isRecentTransactionsPrompt(String text) {
+    final asksRecent =
+        text.contains('recent') ||
+        text.contains('latest') ||
+        text.contains('last few');
+    final asksTransactions =
+        text.contains('transaction') ||
+        text.contains('transactions') ||
+        text.contains('entries') ||
+        text.contains('payments');
+    return asksRecent &&
+        asksTransactions &&
+        !text.contains('balance') &&
+        !_mentionsWriteIntent(text);
+  }
+
+  bool _mentionsNonBalanceFinanceWork(String text) {
+    return _mentionsWriteIntent(text) ||
+        _mentionsComplexReadIntent(text) ||
+        text.contains('spend') ||
+        text.contains('spent') ||
+        text.contains('expense') ||
+        text.contains('income') ||
+        text.contains('transaction') ||
+        text.contains('recent');
+  }
+
+  bool _mentionsComplexReadIntent(String text) {
+    return text.contains('report') ||
+        text.contains('category') ||
+        text.contains('budget') ||
+        text.contains('project') ||
+        text.contains('reminder') ||
+        text.contains('month') ||
+        text.contains('week');
+  }
+
+  bool _mentionsWriteIntent(String text) {
+    return text.contains('create ') ||
+        text.contains('add ') ||
+        text.contains('record ') ||
+        text.contains('save ') ||
+        text.contains('set up') ||
+        text.contains('make ') ||
+        text.contains('new ');
   }
 
   // ============================================================================

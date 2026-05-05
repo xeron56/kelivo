@@ -189,6 +189,10 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                 onSubmit: _submitFromLanding,
                 onOpenPrevious: _openPreviousFromLanding,
                 onOpenFullApp: _openPreviousFromLanding,
+                onOpenLiveMode: () => setState(() {
+                  _showLanding = false;
+                  _tabIndex = 4;
+                }),
               )
             : Row(
                 children: [
@@ -265,7 +269,13 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                                 embedded: true,
                               )
                             : const SizedBox.shrink(),
-                        const EmbeddedFocusSurface(),
+                        EmbeddedFocusSurface(
+                          onBackToMainApp: () {
+                            setState(() {
+                              _showLanding = true;
+                            });
+                          },
+                        ),
                         const _DesktopLiveAssistantTab(),
                         DesktopSettingsPage(
                           key: const ValueKey('settings_page'),

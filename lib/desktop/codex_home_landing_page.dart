@@ -7,12 +7,16 @@ import 'package:provider/provider.dart';
 import 'package:record/record.dart';
 
 import '../core/providers/assistant_provider.dart';
+import '../core/providers/instruction_injection_provider.dart';
 import '../core/providers/settings_provider.dart';
 import '../core/services/api/groq_speech_to_text_service.dart';
 import '../features/home/utils/model_display_helper.dart';
 import '../features/model/widgets/model_select_sheet.dart';
 import '../icons/lucide_adapter.dart';
 import '../shared/widgets/snackbar.dart';
+import 'instruction_injection_popover.dart';
+import 'mcp_servers_popover.dart';
+import 'search_provider_popover.dart';
 
 class LandingAppTarget {
   const LandingAppTarget({
@@ -61,11 +65,13 @@ class CodexHomeLandingPage extends StatefulWidget {
     required this.onSubmit,
     required this.onOpenPrevious,
     required this.onOpenFullApp,
+    required this.onOpenLiveMode,
   });
 
   final Future<void> Function(String prompt, LandingAppTarget app) onSubmit;
   final VoidCallback onOpenPrevious;
   final VoidCallback onOpenFullApp;
+  final VoidCallback onOpenLiveMode;
 
   @override
   State<CodexHomeLandingPage> createState() => _CodexHomeLandingPageState();
@@ -74,6 +80,7 @@ class CodexHomeLandingPage extends StatefulWidget {
 class _CodexHomeLandingPageState extends State<CodexHomeLandingPage> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final GlobalKey _composerKey = GlobalKey();
   final AudioRecorder _audioRecorder = AudioRecorder();
   final GroqSpeechToTextService _speechToTextService =
       GroqSpeechToTextService();
@@ -240,6 +247,68 @@ class _CodexHomeLandingPageState extends State<CodexHomeLandingPage> {
     );
   }
 
+  void _openSearchSettings() {
+    showDesktopSearchProviderPopover(context, anchorKey: _composerKey);
+  }
+
+  Future<void> _openMcpTools() async {
+    final assistantProvider = context.read<AssistantProvider>();
+    await assistantProvider.ensureDefaults(context);
+    if (!mounted) return;
+    final assistantId = assistantProvider.currentAssistantId;
+    if (assistantId == null || assistantId.isEmpty) {
+      showAppSnackBar(
+        context,
+        message: 'Select an assistant before opening tools.',
+        type: NotificationType.info,
+      );
+      return;
+    }
+    await showDesktopMcpServersPopover(
+      context,
+      anchorKey: _composerKey,
+      assistantId: assistantId,
+    );
+  }
+
+  Future<void> _openInstructionLayers() async {
+    final assistantId = context.read<AssistantProvider>().currentAssistantId;
+    final provider = context.read<InstructionInjectionProvider>();
+    await provider.initialize();
+    if (!mounted) return;
+    final items = provider.items;
+    if (items.isEmpty) {
+      showAppSnackBar(
+        context,
+        message: 'No instruction layers are configured yet.',
+        type: NotificationType.info,
+      );
+      return;
+    }
+    await showDesktopInstructionInjectionPopover(
+      context,
+      anchorKey: _composerKey,
+      items: items,
+      assistantId: assistantId,
+    );
+  }
+
+  void _showAttachHint() {
+    showAppSnackBar(
+      context,
+      message: 'Open the full app to attach files to a message.',
+      type: NotificationType.info,
+    );
+  }
+
+  void _showMiniMapHint() {
+    showAppSnackBar(
+      context,
+      message: 'Mini map is available after opening a conversation.',
+      type: NotificationType.info,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -296,6 +365,7 @@ class _CodexHomeLandingPageState extends State<CodexHomeLandingPage> {
                           ),
                           SizedBox(height: veryCompact ? 18 : 24),
                           _PromptComposer(
+                            key: _composerKey,
                             controller: _controller,
                             focusNode: _focusNode,
                             selectedApp: _selectedApp,
@@ -306,8 +376,14 @@ class _CodexHomeLandingPageState extends State<CodexHomeLandingPage> {
                             onSelectApp: (target) =>
                                 setState(() => _selectedApp = target),
                             onPickModel: () => showModelSelectSheet(context),
+                            onOpenSearch: _openSearchSettings,
+                            onOpenTools: _openMcpTools,
+                            onOpenInstructionLayers: _openInstructionLayers,
+                            onOpenAttachments: _showAttachHint,
+                            onOpenMiniMap: _showMiniMapHint,
                             onOpenPrevious: widget.onOpenPrevious,
                             onOpenFullApp: widget.onOpenFullApp,
+                            onOpenLiveMode: widget.onOpenLiveMode,
                             onVoice: _toggleSpeechToText,
                             onSubmit: _submit,
                           ),
@@ -334,6 +410,7 @@ class _CodexHomeLandingPageState extends State<CodexHomeLandingPage> {
 
 class _PromptComposer extends StatelessWidget {
   const _PromptComposer({
+    super.key,
     required this.controller,
     required this.focusNode,
     required this.selectedApp,
@@ -342,8 +419,14 @@ class _PromptComposer extends StatelessWidget {
     required this.submitting,
     required this.onSelectApp,
     required this.onPickModel,
+    required this.onOpenSearch,
+    required this.onOpenTools,
+    required this.onOpenInstructionLayers,
+    required this.onOpenAttachments,
+    required this.onOpenMiniMap,
     required this.onOpenPrevious,
     required this.onOpenFullApp,
+    required this.onOpenLiveMode,
     required this.onVoice,
     required this.onSubmit,
     required this.compact,
@@ -357,8 +440,14 @@ class _PromptComposer extends StatelessWidget {
   final bool submitting;
   final ValueChanged<LandingAppTarget> onSelectApp;
   final VoidCallback onPickModel;
+  final VoidCallback onOpenSearch;
+  final VoidCallback onOpenTools;
+  final VoidCallback onOpenInstructionLayers;
+  final VoidCallback onOpenAttachments;
+  final VoidCallback onOpenMiniMap;
   final VoidCallback onOpenPrevious;
   final VoidCallback onOpenFullApp;
+  final VoidCallback onOpenLiveMode;
   final VoidCallback onVoice;
   final VoidCallback onSubmit;
   final bool compact;
@@ -416,8 +505,13 @@ class _PromptComposer extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: _InlineToolRow(
               onPickModel: onPickModel,
+              onOpenSearch: onOpenSearch,
+              onOpenTools: onOpenTools,
+              onOpenInstructionLayers: onOpenInstructionLayers,
+              onOpenAttachments: onOpenAttachments,
+              onOpenMiniMap: onOpenMiniMap,
               onVoice: onVoice,
-              onOpenFullApp: onOpenFullApp,
+              onOpenLiveMode: onOpenLiveMode,
               onClearPrompt: controller.clear,
             ),
           ),
@@ -478,14 +572,24 @@ class _PromptComposer extends StatelessWidget {
 class _InlineToolRow extends StatelessWidget {
   const _InlineToolRow({
     required this.onPickModel,
+    required this.onOpenSearch,
+    required this.onOpenTools,
+    required this.onOpenInstructionLayers,
+    required this.onOpenAttachments,
+    required this.onOpenMiniMap,
     required this.onVoice,
-    required this.onOpenFullApp,
+    required this.onOpenLiveMode,
     required this.onClearPrompt,
   });
 
   final VoidCallback onPickModel;
+  final VoidCallback onOpenSearch;
+  final VoidCallback onOpenTools;
+  final VoidCallback onOpenInstructionLayers;
+  final VoidCallback onOpenAttachments;
+  final VoidCallback onOpenMiniMap;
   final VoidCallback onVoice;
-  final VoidCallback onOpenFullApp;
+  final VoidCallback onOpenLiveMode;
   final VoidCallback onClearPrompt;
 
   @override
@@ -500,18 +604,18 @@ class _InlineToolRow extends StatelessWidget {
           icon: Lucide.Globe,
           tooltip: 'Web search',
           color: const Color(0xFF1A73E8),
-          onTap: onOpenFullApp,
+          onTap: onOpenSearch,
         ),
         _InlineToolButton(
           icon: Lucide.Search,
           tooltip: 'Search',
           color: const Color(0xFF4B5FA8),
-          onTap: onOpenFullApp,
+          onTap: onOpenSearch,
         ),
         _InlineToolButton(
           icon: Lucide.Hammer,
           tooltip: 'Tools',
-          onTap: onOpenFullApp,
+          onTap: onOpenTools,
         ),
         _InlineToolButton(
           icon: Lucide.AudioWaveform,
@@ -520,18 +624,18 @@ class _InlineToolRow extends StatelessWidget {
         ),
         _InlineToolButton(
           icon: Lucide.Bot,
-          tooltip: 'Assistant',
-          onTap: onOpenFullApp,
+          tooltip: 'Live voice mode',
+          onTap: onOpenLiveMode,
         ),
         _InlineToolButton(
           icon: Lucide.Paperclip,
           tooltip: 'Attach files',
-          onTap: onOpenFullApp,
+          onTap: onOpenAttachments,
         ),
         _InlineToolButton(
           icon: Lucide.Layers,
           tooltip: 'Context layers',
-          onTap: onOpenFullApp,
+          onTap: onOpenInstructionLayers,
         ),
         _InlineToolButton(
           icon: Lucide.Eraser,
@@ -541,7 +645,7 @@ class _InlineToolRow extends StatelessWidget {
         _InlineToolButton(
           icon: Lucide.Map,
           tooltip: 'Mini map',
-          onTap: onOpenFullApp,
+          onTap: onOpenMiniMap,
         ),
         _InlineToolButton(
           icon: Lucide.ChevronDown,

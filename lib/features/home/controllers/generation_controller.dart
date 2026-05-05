@@ -114,14 +114,16 @@ class GenerationController {
     Assistant? assistant,
     String providerKey,
     String modelId,
-    bool hasBuiltInSearch,
-  ) {
+    bool hasBuiltInSearch, {
+    String? latestUserText,
+  }) {
     return toolHandlerService.buildToolDefinitions(
       settings,
       assistant,
       providerKey,
       modelId,
       hasBuiltInSearch,
+      latestUserText: latestUserText,
       isToolModel: isToolModel,
     );
   }

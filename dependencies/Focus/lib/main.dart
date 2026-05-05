@@ -134,9 +134,14 @@ class _FocusBootstrapData {
 }
 
 class FocusModulePage extends StatefulWidget {
-  const FocusModulePage({super.key, this.embeddedInHost = true});
+  const FocusModulePage({
+    super.key,
+    this.embeddedInHost = true,
+    this.onExitHost,
+  });
 
   final bool embeddedInHost;
+  final VoidCallback? onExitHost;
 
   @override
   State<FocusModulePage> createState() => _FocusModulePageState();
@@ -189,7 +194,10 @@ class _FocusModulePageState extends State<FocusModulePage> {
                 ..setTheme(bootstrap.savedTheme);
             }),
           ],
-          child: FocusApp(embeddedInHost: widget.embeddedInHost),
+          child: FocusApp(
+            embeddedInHost: widget.embeddedInHost,
+            onExitHost: widget.onExitHost,
+          ),
         );
       },
     );
@@ -243,9 +251,10 @@ class SplashRouterScreen extends ConsumerWidget {
 
 // The root widget of the application.
 class FocusApp extends ConsumerStatefulWidget {
-  const FocusApp({super.key, this.embeddedInHost = false});
+  const FocusApp({super.key, this.embeddedInHost = false, this.onExitHost});
 
   final bool embeddedInHost;
+  final VoidCallback? onExitHost;
 
   @override
   ConsumerState<FocusApp> createState() => _FocusAppState();
@@ -364,7 +373,12 @@ class _FocusAppState extends ConsumerState<FocusApp> {
             ),
       themeMode: themeMode == AppTheme.light ? ThemeMode.light : ThemeMode.dark,
       themeAnimationDuration: Duration.zero,
-      home: isDesktop ? const DesktopHomeScreen() : const SplashRouterScreen(),
+      home: isDesktop
+          ? DesktopHomeScreen(
+              embeddedInHost: widget.embeddedInHost,
+              onExitHost: widget.onExitHost,
+            )
+          : const SplashRouterScreen(),
     );
   }
 }
